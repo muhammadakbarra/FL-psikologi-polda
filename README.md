@@ -15,7 +15,7 @@ Backend API untuk aplikasi psikologi Polda.
 
 ## 🔍 Tentang
 
-Aplikasi ini menyediakan backend API untuk sistem manajemen pengguna dengan fitur khusus untuk pembuatan batch user dengan format nama kesatuan.
+Aplikasi ini menyediakan backend API untuk Aplikasi Tes online
 
 ## 💻 Teknologi
 
