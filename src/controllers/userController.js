@@ -150,16 +150,16 @@ const deleteUser = async (req, res) => {
 
 const createBatchUsers = async (req, res) => {
     try {
-        const { kesatuan, jumlah } = req.body;
+        // Menggunakan masterKesatuanId sebagai input, bukan kesatuan
+        const { masterKesatuanId, jumlah } = req.body;
 
-        if (!kesatuan || !jumlah) {
+        if (!masterKesatuanId || !jumlah) {
             return res.status(400).json({
                 status: 'error',
-                message: 'Kesatuan dan jumlah harus diisi',
+                message: 'masterKesatuanId dan jumlah harus diisi',
             });
         }
 
-        // Validasi jumlah adalah angka positif
         const count = parseInt(jumlah);
         if (isNaN(count) || count <= 0) {
             return res.status(400).json({
@@ -168,11 +168,23 @@ const createBatchUsers = async (req, res) => {
             });
         }
 
-        // Cari nomor urut terakhir untuk kesatuan ini
+        // Ambil data Master Kesatuan untuk mendapatkan prefix
+        const masterKesatuan = await prisma.masterKesatuan.findUnique({
+            where: { id: masterKesatuanId },
+        });
+        if (!masterKesatuan) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Master Kesatuan tidak ditemukan',
+            });
+        }
+        const prefix = masterKesatuan.nama_kesatuan;
+
+        // Cari user existing dengan prefix yang sama
         const existingUsers = await prisma.user.findMany({
             where: {
                 username: {
-                    startsWith: kesatuan,
+                    startsWith: prefix,
                 },
             },
             orderBy: {
@@ -182,11 +194,9 @@ const createBatchUsers = async (req, res) => {
         });
 
         let lastNumber = 0;
-
         if (existingUsers.length > 0) {
-            // Extract nomor dari username terakhir
             const lastUsername = existingUsers[0].username;
-            const numberPart = lastUsername.substring(kesatuan.length);
+            const numberPart = lastUsername.substring(prefix.length);
             lastNumber = parseInt(numberPart) || 0;
         }
 
@@ -194,11 +204,10 @@ const createBatchUsers = async (req, res) => {
         const newUsers = [];
         const hashedPassword = await bcrypt.hash('polda123', 10);
 
-        // Create users in batch
         for (let i = 1; i <= count; i++) {
             const currentNumber = lastNumber + i;
             const formattedNumber = String(currentNumber).padStart(4, '0');
-            const username = `${kesatuan}${formattedNumber}`;
+            const username = `${prefix}${formattedNumber}`;
 
             try {
                 const newUser = await prisma.user.create({
@@ -208,13 +217,12 @@ const createBatchUsers = async (req, res) => {
                         id_biodata: null,
                     },
                 });
-
                 newUsers.push({
                     id: newUser.id,
                     username: newUser.username,
                 });
             } catch (error) {
-                // Skip jika username sudah ada
+                // Lewati jika username sudah ada dan tampilkan error pada console
                 console.error(
                     `Gagal membuat user ${username}: ${error.message}`
                 );
@@ -226,7 +234,7 @@ const createBatchUsers = async (req, res) => {
             message: `${newUsers.length} user berhasil dibuat`,
             data: {
                 users: newUsers,
-                password: 'polda123', // Display password for reference
+                password: 'polda123', // Password default untuk referensi
             },
         });
     } catch (error) {

@@ -54,3 +54,17 @@ model KategoriTes {
 
   masterJenisTes MasterJenisTes @relation(fields: [masterJenisTesId], references: [id])
 }
+
+model MasterKesatuan {
+  id            Int      @id @default(autoincrement())
+  nama_kesatuan String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model MasterPangkat {
+  id           Int      @id @default(autoincrement())
+  nama_pangkat String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
