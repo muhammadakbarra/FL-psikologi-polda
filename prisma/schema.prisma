@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -37,11 +34,13 @@ enum Role {
 }
 
 model MasterJenisTes {
-  id             Int           @id @default(autoincrement())
-  nama_jenis_tes String        @unique
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  kategoriTes    KategoriTes[] // Relasi satu ke banyak ke KategoriTes
+  id             Int      @id @default(autoincrement())
+  nama_jenis_tes String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relasi satu ke banyak ke KategoriTes
+  kategoriTes KategoriTes[]
 }
 
 model KategoriTes {
@@ -60,6 +59,9 @@ model MasterKesatuan {
   nama_kesatuan String   @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // Tambahkan relasi balik ke Biodata
+  biodata Biodata[]
 }
 
 model MasterPangkat {
@@ -67,4 +69,21 @@ model MasterPangkat {
   nama_pangkat String   @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // Tambahkan relasi balik ke Biodata
+  biodata Biodata[]
+}
+
+model Biodata {
+  id               Int      @id @default(autoincrement())
+  nama_lengkap     String
+  nrp              String
+  jabatan          String
+  masterKesatuanId Int
+  masterPangkatId  Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  masterKesatuan MasterKesatuan @relation(fields: [masterKesatuanId], references: [id])
+  masterPangkat  MasterPangkat  @relation(fields: [masterPangkatId], references: [id])
 }
