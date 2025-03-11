@@ -116,10 +116,22 @@ const deleteUser = async (id) => {
     });
 };
 
+async function hasBiodata(userId) {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            id_biodata: true,
+        },
+    });
+    return user;
+}
+
 module.exports = {
     createUser,
     getAllUsers,
     getUserById,
     updateUser,
     deleteUser,
+    hasBiodata,
 };

@@ -17,5 +17,7 @@ router.post(
     auth.verifyAdmin,
     userController.createBatchUsers
 );
+// Endpoint baru untuk cek biodata
+router.get('/:id/cek-biodata', userController.checkUserBiodata);
 
 module.exports = router;

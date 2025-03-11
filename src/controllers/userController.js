@@ -245,6 +245,41 @@ const createBatchUsers = async (req, res) => {
     }
 };
 
+const checkUserBiodata = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = parseInt(id);
+
+        // Cari user
+        const user = await userService.hasBiodata(userId);
+        if (!user) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'User tidak ditemukan',
+            });
+        }
+
+        // Cek id_biodata
+        const hasBiodata = user.id_biodata !== null;
+
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                userId: user.id,
+                hasBiodata,
+            },
+            message: hasBiodata
+                ? 'User sudah mengisi biodata'
+                : 'User belum mengisi biodata',
+        });
+    } catch (error) {
+        return res.status(400).json({
+            status: 'error',
+            message: error.message || 'Gagal mengecek biodata user',
+        });
+    }
+};
+
 module.exports = {
     createUser,
     getAllUsers,
@@ -252,4 +287,5 @@ module.exports = {
     updateUser,
     deleteUser,
     createBatchUsers,
+    checkUserBiodata,
 };
