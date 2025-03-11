@@ -15,6 +15,8 @@ model User {
   username   String   @unique
   password   String
   id_biodata Int? // Foreign key (future)
+  // Tambahkan relasi ini agar Prisma bisa include biodata langsung
+  biodata    Biodata? @relation(fields: [id_biodata], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -89,31 +91,32 @@ model Biodata {
 
   masterKesatuan MasterKesatuan @relation(fields: [masterKesatuanId], references: [id])
   masterPangkat  MasterPangkat  @relation(fields: [masterPangkatId], references: [id])
+  User           User[]
 }
 
 model Soal {
-  id              Int      @id @default(autoincrement())
-  kategoriTesId   Int
-  teks_soal       String?   @db.Text
-  gambar_soal     String?  // Nullable untuk soal tanpa gambar
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  kategoriTesId Int
+  teks_soal     String?  @db.Text
+  gambar_soal   String? // Nullable untuk soal tanpa gambar
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relasi ke kategori tes
-  kategoriTes     KategoriTes @relation(fields: [kategoriTesId], references: [id])
+  kategoriTes KategoriTes @relation(fields: [kategoriTesId], references: [id])
 
   // Relasi one-to-many ke pilihan jawaban
-  pilihanJawaban  PilihanJawaban[]
+  pilihanJawaban PilihanJawaban[]
 }
 
 model PilihanJawaban {
-  id              Int      @id @default(autoincrement())
-  soalId          Int
-  teks_pilihan    String?  @db.Text
-  gambar_pilihan  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  soalId         Int
+  teks_pilihan   String?  @db.Text
+  gambar_pilihan String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relasi ke soal
-  soal            Soal     @relation(fields: [soalId], references: [id])
+  soal Soal @relation(fields: [soalId], references: [id])
 }

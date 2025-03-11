@@ -10,10 +10,12 @@ const masterPangkatRoutes = require('./masterPangkatRoutes');
 const mastersRoutes = require('./mastersRoutes');
 const biodataRoutes = require('./biodataRoutes');
 const soalRoutes = require('./soalRoutes');
+const userBiodataRoutes = require('./userBiodataRoutes');
 
 const router = express.Router();
 
 router.use('/users', userRoutes);
+router.use('/user-biodata', userBiodataRoutes);
 router.use('/admins', adminRoutes);
 router.use('/auth', authRoutes);
 router.use('/master-jenis-tes', masterJenisTesRoutes);
