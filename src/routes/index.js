@@ -1,3 +1,4 @@
+// src/routes/index.js
 const express = require('express');
 const userRoutes = require('./userRoutes');
 const adminRoutes = require('./adminRoutes');
@@ -7,7 +8,8 @@ const kategoriTesRoutes = require('./kategoriTesRoutes');
 const masterKesatuanRoutes = require('./masterKesatuanRoutes');
 const masterPangkatRoutes = require('./masterPangkatRoutes');
 const mastersRoutes = require('./mastersRoutes');
-const biodataRoutes = require('./biodataRoutes'); // <-- import route baru
+const biodataRoutes = require('./biodataRoutes');
+const soalRoutes = require('./soalRoutes');
 
 const router = express.Router();
 
@@ -19,6 +21,7 @@ router.use('/kategori-tes', kategoriTesRoutes);
 router.use('/master-kesatuan', masterKesatuanRoutes);
 router.use('/master-pangkat', masterPangkatRoutes);
 router.use('/masters', mastersRoutes);
-router.use('/biodata', biodataRoutes); // <-- daftarkan route baru
+router.use('/biodata', biodataRoutes);
+router.use('/soal', soalRoutes); // Daftarkan route
 
 module.exports = router;

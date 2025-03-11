@@ -52,6 +52,9 @@ model KategoriTes {
   updatedAt         DateTime @updatedAt
 
   masterJenisTes MasterJenisTes @relation(fields: [masterJenisTesId], references: [id])
+
+  // Relasi balik ke Soal
+  soal Soal[]
 }
 
 model MasterKesatuan {
@@ -86,4 +89,31 @@ model Biodata {
 
   masterKesatuan MasterKesatuan @relation(fields: [masterKesatuanId], references: [id])
   masterPangkat  MasterPangkat  @relation(fields: [masterPangkatId], references: [id])
+}
+
+model Soal {
+  id              Int      @id @default(autoincrement())
+  kategoriTesId   Int
+  teks_soal       String?   @db.Text
+  gambar_soal     String?  // Nullable untuk soal tanpa gambar
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relasi ke kategori tes
+  kategoriTes     KategoriTes @relation(fields: [kategoriTesId], references: [id])
+
+  // Relasi one-to-many ke pilihan jawaban
+  pilihanJawaban  PilihanJawaban[]
+}
+
+model PilihanJawaban {
+  id              Int      @id @default(autoincrement())
+  soalId          Int
+  teks_pilihan    String?  @db.Text
+  gambar_pilihan  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relasi ke soal
+  soal            Soal     @relation(fields: [soalId], references: [id])
 }
