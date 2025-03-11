@@ -11,6 +11,8 @@ const mastersRoutes = require('./mastersRoutes');
 const biodataRoutes = require('./biodataRoutes');
 const soalRoutes = require('./soalRoutes');
 const userBiodataRoutes = require('./userBiodataRoutes');
+const testSessionRoutes = require('./testSessionRoutes');
+const testAnswerRoutes = require('./testAnswerRoutes');
 
 const router = express.Router();
 
@@ -24,6 +26,8 @@ router.use('/master-kesatuan', masterKesatuanRoutes);
 router.use('/master-pangkat', masterPangkatRoutes);
 router.use('/masters', mastersRoutes);
 router.use('/biodata', biodataRoutes);
-router.use('/soal', soalRoutes); // Daftarkan route
+router.use('/soal', soalRoutes);
+router.use('/test-session', testSessionRoutes);
+router.use('/test-answer', testAnswerRoutes);
 
 module.exports = router;
