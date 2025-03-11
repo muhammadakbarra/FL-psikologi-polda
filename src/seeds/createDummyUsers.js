@@ -52,7 +52,6 @@ const kesatuanList = [
 async function seedPangkat() {
     console.log('\n--- Seeding MasterPangkat ---');
     for (const pangkat of pangkatList) {
-        // Cek apakah pangkat sudah ada
         const existing = await prisma.masterPangkat.findUnique({
             where: { nama_pangkat: pangkat },
         });
@@ -71,7 +70,6 @@ async function seedPangkat() {
 async function seedKesatuan() {
     console.log('\n--- Seeding MasterKesatuan ---');
     for (const kesatuan of kesatuanList) {
-        // Cek apakah kesatuan sudah ada
         const existing = await prisma.masterKesatuan.findUnique({
             where: { nama_kesatuan: kesatuan },
         });
@@ -85,6 +83,27 @@ async function seedKesatuan() {
         }
     }
     console.log('Selesai seeding MasterKesatuan');
+}
+
+// Tambahkan fungsi untuk seeding MasterJenisTes
+async function seedMasterJenisTes() {
+    console.log('\n--- Seeding MasterJenisTes ---');
+    const listJenisTes = ['PILIHAN GANDA', 'ESSAY'];
+
+    for (const jenis of listJenisTes) {
+        const existing = await prisma.masterJenisTes.findUnique({
+            where: { nama_jenis_tes: jenis },
+        });
+        if (!existing) {
+            await prisma.masterJenisTes.create({
+                data: { nama_jenis_tes: jenis },
+            });
+            console.log(`✅ MasterJenisTes "${jenis}" berhasil dibuat`);
+        } else {
+            console.log(`ℹ️ MasterJenisTes "${jenis}" sudah ada, lewati`);
+        }
+    }
+    console.log('Selesai seeding MasterJenisTes');
 }
 
 async function seedUsersAndAdmins() {
@@ -162,6 +181,9 @@ async function main() {
         // Seed pangkat & kesatuan dulu
         await seedPangkat();
         await seedKesatuan();
+
+        // Seed MasterJenisTes (pilihan ganda, essay)
+        await seedMasterJenisTes();
 
         // Lalu seed user & admin
         await seedUsersAndAdmins();
