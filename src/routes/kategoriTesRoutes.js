@@ -7,7 +7,7 @@ const auth = require('../middleware/auth'); // endpoint dilindungi, gunakan veri
 router.post('/', auth.verifyToken, kategoriTesController.createKategoriTes);
 
 // Endpoint untuk mendapatkan semua kategori tes
-router.get('/', auth.verifyToken, kategoriTesController.getAllKategoriTes);
+router.get('/', kategoriTesController.getAllKategoriTes);
 
 // Endpoint untuk menghapus kategori tes berdasarkan ID
 router.delete(
