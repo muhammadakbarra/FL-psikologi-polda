@@ -16,4 +16,7 @@ router.delete(
     kategoriTesController.deleteKategoriTesById
 );
 
+// Endpoint untuk mendapatkan kategori tes berdasarkan ID
+router.get('/:id', kategoriTesController.getKategoriTesById);
+
 module.exports = router;

@@ -60,8 +60,35 @@ const deleteKategoriTesById = async (req, res) => {
     }
 };
 
+const getKategoriTesById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const kategoriTes = await kategoriTesService.getKategoriTesById(
+            parseInt(id)
+        );
+
+        if (!kategoriTes) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Kategori Tes tidak ditemukan',
+            });
+        }
+
+        res.status(200).json({
+            status: 'success',
+            data: kategoriTes,
+        });
+    } catch (error) {
+        res.status(400).json({
+            status: 'error',
+            message: error.message || 'Gagal mendapatkan data Kategori Tes',
+        });
+    }
+};
+
 module.exports = {
     createKategoriTes,
     getAllKategoriTes,
     deleteKategoriTesById,
+    getKategoriTesById,
 };

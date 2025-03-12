@@ -26,8 +26,19 @@ const deleteKategoriTesById = async (id) => {
     });
 };
 
+const getKategoriTesById = async (id) => {
+    return prisma.kategoriTes.findUnique({
+        where: { id },
+        include: {
+            masterJenisTes: true, // mengembalikan detail master jenis tes terkait
+            soal: true, // Jika ingin mengembalikan soal-soal terkait (opsional)
+        },
+    });
+};
+
 module.exports = {
     createKategoriTes,
     getAllKategoriTes,
     deleteKategoriTesById,
+    getKategoriTesById,
 };
