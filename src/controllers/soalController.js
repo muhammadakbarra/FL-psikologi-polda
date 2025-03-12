@@ -3,6 +3,7 @@ const soalService = require('../services/soalService');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
+const xlsx = require('xlsx');
 
 // Helper untuk membuat folder dan menyimpan gambar dengan kompresi (jika > 2MB)
 async function simpanFileGambar(file) {
@@ -191,6 +192,57 @@ const getSoalByKategori = async (req, res) => {
     }
 };
 
+const importSoalFromExcel = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'File Excel diperlukan',
+            });
+        }
+
+        const { kategoriTesId, jenis_soal } = req.body;
+
+        if (!kategoriTesId) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Kategori tes harus dipilih',
+            });
+        }
+
+        if (!['pilihan_ganda', 'essay'].includes(jenis_soal)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Jenis soal harus pilihan_ganda atau essay',
+            });
+        }
+
+        // Proses file Excel
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const data = xlsx.utils.sheet_to_json(worksheet);
+
+        // Kirim data ke service untuk diproses
+        const importResult = await soalService.importSoalFromExcel(
+            parseInt(kategoriTesId),
+            jenis_soal,
+            data
+        );
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Soal berhasil diimport',
+            data: importResult,
+        });
+    } catch (error) {
+        return res.status(400).json({
+            status: 'error',
+            message: error.message || 'Gagal mengimport soal dari Excel',
+        });
+    }
+};
+
 module.exports = {
     createSoal,
     getAllSoal,
@@ -198,4 +250,5 @@ module.exports = {
     updateSoal,
     deleteSoal,
     getSoalByKategori,
+    importSoalFromExcel,
 };

@@ -4,6 +4,7 @@ const router = express.Router();
 const soalController = require('../controllers/soalController');
 const auth = require('../middleware/auth'); // opsional
 const upload = require('../config/multerConfig'); // import config multer
+const uploadExcel = require('../config/excelMulterConfig'); // import config multer
 
 // CREATE soal (dengan upload gambar opsional)
 router.post(
@@ -36,5 +37,12 @@ router.put(
 
 // DELETE soal
 router.delete('/:id', auth.verifyToken, soalController.deleteSoal);
+
+router.post(
+    '/import-excel',
+    auth.verifyToken,
+    uploadExcel.single('excel_file'),
+    soalController.importSoalFromExcel
+);
 
 module.exports = router;
