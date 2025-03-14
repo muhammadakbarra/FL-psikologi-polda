@@ -7,12 +7,10 @@ async function createTestSession(req, res) {
         const { kategoriTesId, noTes, jenisPengajuan } = req.body;
 
         if (!kategoriTesId) {
-            return res
-                .status(400)
-                .json({
-                    status: 'error',
-                    message: 'kategoriTesId harus diisi',
-                });
+            return res.status(400).json({
+                status: 'error',
+                message: 'kategoriTesId harus diisi',
+            });
         }
 
         const session = await testSessionService.createTestSession({
@@ -58,12 +56,10 @@ async function getTestSessionById(req, res) {
             parseInt(id)
         );
         if (!session) {
-            return res
-                .status(404)
-                .json({
-                    status: 'error',
-                    message: 'Test session tidak ditemukan',
-                });
+            return res.status(404).json({
+                status: 'error',
+                message: 'Test session tidak ditemukan',
+            });
         }
         return res.status(200).json({ status: 'success', data: session });
     } catch (error) {
@@ -91,9 +87,43 @@ async function finishTestSession(req, res) {
     }
 }
 
+const getUserTestCategoriesStatus = async (req, res) => {
+    try {
+        // Get the authenticated user ID from the token
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                status: 'error',
+                message: 'Unauthorized access',
+            });
+        }
+
+        // If user is admin and a userId param is provided, use that instead
+        let userId = req.user.id;
+
+        // Admin can check any user's status by providing a userId parameter
+        if (req.user.type === 'admin' && req.query.userId) {
+            userId = parseInt(req.query.userId);
+        }
+
+        const categoriesWithStatus =
+            await testSessionService.getUserTestCategoriesStatus(userId);
+
+        return res.status(200).json({
+            status: 'success',
+            data: categoriesWithStatus,
+        });
+    } catch (error) {
+        return res.status(400).json({
+            status: 'error',
+            message: error.message || 'Failed to get test categories status',
+        });
+    }
+};
+
 module.exports = {
     createTestSession,
     startTestSession,
     getTestSessionById,
     finishTestSession,
+    getUserTestCategoriesStatus,
 };

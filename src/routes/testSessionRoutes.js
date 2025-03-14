@@ -24,4 +24,11 @@ router.put(
     testSessionController.finishTestSession
 );
 
+// Get test categories with completion status for authenticated user
+router.get(
+    '/user-categories',
+    authMiddleware,
+    testSessionController.getUserTestCategoriesStatus
+);
+
 module.exports = router;
