@@ -27,7 +27,7 @@ router.put(
 // Get test categories with completion status for authenticated user
 router.get(
     '/user-categories',
-    authMiddleware,
+    auth.verifyToken,
     testSessionController.getUserTestCategoriesStatus
 );
 
