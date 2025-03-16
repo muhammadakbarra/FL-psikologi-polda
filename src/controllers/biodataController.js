@@ -2,37 +2,24 @@ const biodataService = require('../services/biodataService');
 
 const createBiodata = async (req, res) => {
     try {
-        const {
-            userId,
-            nama_lengkap,
-            nrp,
-            jabatan,
-            masterKesatuanId,
-            masterPangkatId,
-        } = req.body;
+        const { userId, nama_lengkap, nrp, jabatan, masterPangkatId } =
+            req.body;
 
         // Validasi sederhana
-        if (
-            !nama_lengkap ||
-            !nrp ||
-            !jabatan ||
-            !masterKesatuanId ||
-            !masterPangkatId
-        ) {
+        if (!nama_lengkap || !nrp || !jabatan || !masterPangkatId) {
             return res.status(400).json({
                 status: 'error',
                 message:
-                    'nama_lengkap, nrp, jabatan, masterKesatuanId, dan masterPangkatId harus diisi',
+                    'nama_lengkap, nrp, jabatan, dan masterPangkatId harus diisi',
             });
         }
 
-        // Panggil service untuk buat biodata & update user
+        // Panggil service untuk membuat biodata & update user
         const newBiodata = await biodataService.createBiodata({
             userId,
             nama_lengkap,
             nrp,
             jabatan,
-            masterKesatuanId: parseInt(masterKesatuanId),
             masterPangkatId: parseInt(masterPangkatId),
         });
 

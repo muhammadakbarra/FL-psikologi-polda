@@ -1,0 +1,18 @@
+-- CreateTable
+CREATE TABLE `HasilTes` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `userTestSessionId` INTEGER NOT NULL,
+    `status` ENUM('MENUNGGU', 'MEMENUHI_SYARAT', 'TIDAK_MEMENUHI_SYARAT') NOT NULL DEFAULT 'MENUNGGU',
+    `keterangan` VARCHAR(191) NULL,
+    `adminId` INTEGER NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `HasilTes` ADD CONSTRAINT `HasilTes_userTestSessionId_fkey` FOREIGN KEY (`userTestSessionId`) REFERENCES `UserTestSession`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `HasilTes` ADD CONSTRAINT `HasilTes_adminId_fkey` FOREIGN KEY (`adminId`) REFERENCES `Admin`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

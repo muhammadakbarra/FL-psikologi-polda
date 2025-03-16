@@ -13,7 +13,6 @@ async function createTestSession({
             kategoriTesId,
             noTes,
             jenisPengajuan,
-            // startedAt otomatis now() via default
         },
     });
 }
@@ -22,7 +21,7 @@ async function startTestSession(sessionId) {
     return prisma.userTestSession.update({
         where: { id: sessionId },
         data: {
-            startedAt: new Date(), // Simpan waktu mulai ujian
+            startedAt: new Date(),
         },
     });
 }
@@ -44,29 +43,37 @@ async function getTestSessionById(sessionId) {
 }
 
 async function finishTestSession(sessionId) {
-    return prisma.userTestSession.update({
+    // Update test session untuk menandai selesai dengan mencatat finishedAt
+    const updatedSession = await prisma.userTestSession.update({
         where: { id: sessionId },
         data: {
             finishedAt: new Date(),
         },
     });
+
+    // Setelah sesi selesai, buat record hasil tes dengan default status MENUNGGU
+    const hasilTes = await prisma.hasilTes.create({
+        data: {
+            userTestSessionId: sessionId,
+            // Status default MENUNGGU sudah diatur melalui schema.prisma
+        },
+    });
+
+    // Mengembalikan data sesi dan hasil tes
+    return { updatedSession, hasilTes };
 }
 
 // Get all kategori tes with completion status for the authenticated user
 async function getUserTestCategoriesStatus(userId) {
     try {
-        // First, get all kategori tes
         const allKategoriTes = await prisma.kategoriTes.findMany({
-            include: {
-                masterJenisTes: true,
-            },
+            include: { masterJenisTes: true },
         });
 
-        // Get all test sessions that this user has finished
         const completedSessions = await prisma.userTestSession.findMany({
             where: {
                 userId: parseInt(userId),
-                finishedAt: { not: null }, // Only include finished sessions
+                finishedAt: { not: null },
             },
             select: {
                 kategoriTesId: true,
@@ -76,7 +83,6 @@ async function getUserTestCategoriesStatus(userId) {
             },
         });
 
-        // Get all test sessions that this user has started but not finished
         const inProgressSessions = await prisma.userTestSession.findMany({
             where: {
                 userId: parseInt(userId),
@@ -91,7 +97,6 @@ async function getUserTestCategoriesStatus(userId) {
             },
         });
 
-        // Create maps for quick lookup
         const completedMap = new Map();
         completedSessions.forEach((session) => {
             completedMap.set(session.kategoriTesId, {
@@ -110,11 +115,9 @@ async function getUserTestCategoriesStatus(userId) {
             });
         });
 
-        // Map the results with completion status
         return allKategoriTes.map((kategori) => {
             const completed = completedMap.get(kategori.id);
             const inProgress = inProgressMap.get(kategori.id);
-
             return {
                 ...kategori,
                 status: completed

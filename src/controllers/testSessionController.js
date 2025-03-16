@@ -72,13 +72,12 @@ async function getTestSessionById(req, res) {
 async function finishTestSession(req, res) {
     try {
         const { id } = req.params;
-        const session = await testSessionService.finishTestSession(
-            parseInt(id)
-        );
+        const result = await testSessionService.finishTestSession(parseInt(id));
         return res.status(200).json({
             status: 'success',
-            message: 'Test session telah diselesaikan',
-            data: session,
+            message:
+                'Test session telah diselesaikan dan hasil tes telah dibuat',
+            data: result,
         });
     } catch (error) {
         return res
@@ -86,7 +85,6 @@ async function finishTestSession(req, res) {
             .json({ status: 'error', message: error.message });
     }
 }
-
 const getUserTestCategoriesStatus = async (req, res) => {
     try {
         // Get the authenticated user ID from the token
