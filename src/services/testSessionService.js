@@ -145,10 +145,45 @@ async function getUserTestCategoriesStatus(userId) {
     }
 }
 
+async function getFinishedSessionsByFilter(kategoriTesId, kesatuanId) {
+    const sessions = await prisma.userTestSession.findMany({
+        where: {
+            finishedAt: { not: null },
+            kategoriTesId: parseInt(kategoriTesId),
+            user: {
+                masterKesatuanId: parseInt(kesatuanId),
+            },
+        },
+        include: {
+            user: {
+                include: {
+                    biodata: true,
+                    masterKesatuan: true,
+                },
+            },
+            kategoriTes: true,
+        },
+    });
+
+    return sessions.map((session) => ({
+        userTestSessionID: session.id,
+        userID: session.userId,
+        kategoriTesID: session.kategoriTesId,
+        noTes: session.noTes,
+        namaKategori: session.kategoriTes?.nama_kategori_tes || null,
+        username: session.user?.username || null,
+        nrp: session.user?.biodata?.nrp || null,
+        jenisKesatuan: session.user?.masterKesatuan?.nama_kesatuan || null,
+        startedAt: session.startedAt,
+        finishedAt: session.finishedAt,
+    }));
+}
+
 module.exports = {
     createTestSession,
     startTestSession,
     getTestSessionById,
     finishTestSession,
     getUserTestCategoriesStatus,
+    getFinishedSessionsByFilter,
 };

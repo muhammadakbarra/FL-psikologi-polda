@@ -118,10 +118,41 @@ const getUserTestCategoriesStatus = async (req, res) => {
     }
 };
 
+async function getFinishedSessionsByFilter(req, res) {
+    try {
+        const { kategoriTesId, kesatuanId } = req.params;
+        if (!kategoriTesId || !kesatuanId) {
+            return res.status(400).json({
+                status: 'error',
+                message:
+                    'kategoriTesId dan kesatuanId harus disertakan dalam URL',
+            });
+        }
+        const sessions = await testSessionService.getFinishedSessionsByFilter(
+            kategoriTesId,
+            kesatuanId
+        );
+        res.status(200).json({
+            status: 'success',
+            message:
+                'Berhasil mengambil data sesi ujian yang selesai berdasarkan filter',
+            data: sessions,
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message:
+                error.message ||
+                'Gagal mengambil data sesi ujian berdasarkan filter',
+        });
+    }
+}
+
 module.exports = {
     createTestSession,
     startTestSession,
     getTestSessionById,
     finishTestSession,
     getUserTestCategoriesStatus,
+    getFinishedSessionsByFilter,
 };

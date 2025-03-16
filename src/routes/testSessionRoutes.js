@@ -31,4 +31,10 @@ router.get(
     testSessionController.getUserTestCategoriesStatus
 );
 
+router.get(
+    '/finished/:kategoriTesId/:kesatuanId',
+    auth.verifyToken,
+    testSessionController.getFinishedSessionsByFilter
+);
+
 module.exports = router;
