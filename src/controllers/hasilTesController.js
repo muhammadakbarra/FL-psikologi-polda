@@ -9,9 +9,7 @@ const getAllHasilTes = async (req, res) => {
                 userTestSession: {
                     include: {
                         user: {
-                            include: {
-                                biodata: true,
-                            },
+                            include: { biodata: true },
                         },
                         kategoriTes: true,
                     },
@@ -51,6 +49,75 @@ const getAllHasilTes = async (req, res) => {
     }
 };
 
+// API GET: Mengambil hasil tes berdasarkan filter kategoriTesId dan kesatuanId
+const getHasilTesByFilter = async (req, res) => {
+    try {
+        const { kategoriTesId, kesatuanId } = req.query;
+        let whereClause = {};
+
+        if (kategoriTesId) {
+            whereClause.userTestSession = {
+                ...(whereClause.userTestSession || {}),
+                kategoriTesId: parseInt(kategoriTesId),
+            };
+        }
+
+        if (kesatuanId) {
+            // Filter berdasarkan masterKesatuanId pada User yang terkait dengan UserTestSession
+            whereClause.userTestSession = {
+                ...(whereClause.userTestSession || {}),
+                user: { masterKesatuanId: parseInt(kesatuanId) },
+            };
+        }
+
+        const hasilTesList = await prisma.hasilTes.findMany({
+            where: whereClause,
+            include: {
+                userTestSession: {
+                    include: {
+                        user: {
+                            include: { biodata: true },
+                        },
+                        kategoriTes: true,
+                    },
+                },
+                admin: true,
+            },
+        });
+
+        const result = hasilTesList.map((item) => ({
+            id: item.id,
+            username: item.userTestSession?.user?.username || null,
+            nrp: item.userTestSession?.user?.biodata?.nrp || null,
+            kategoriTes:
+                item.userTestSession?.kategoriTes?.nama_kategori_tes || null,
+            waktu_pengerjaan:
+                item.userTestSession?.kategoriTes?.waktu_pengerjaan || null,
+            finishedAt: item.userTestSession?.finishedAt || null,
+            status: item.status,
+            keterangan: item.keterangan || null,
+            admin: item.admin
+                ? { id: item.admin.id, username: item.admin.username }
+                : null,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+        }));
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Berhasil mengambil data hasil tes berdasarkan filter',
+            data: result,
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message:
+                error.message ||
+                'Gagal mendapatkan data hasil tes berdasarkan filter',
+        });
+    }
+};
+
 // API PUT: Memperbarui status dan keterangan hasil tes (misalnya setelah diverifikasi oleh admin)
 const updateHasilTes = async (req, res) => {
     try {
@@ -70,9 +137,7 @@ const updateHasilTes = async (req, res) => {
                 userTestSession: {
                     include: {
                         user: {
-                            include: {
-                                biodata: true,
-                            },
+                            include: { biodata: true },
                         },
                         kategoriTes: true,
                     },
@@ -114,5 +179,6 @@ const updateHasilTes = async (req, res) => {
 
 module.exports = {
     getAllHasilTes,
+    getHasilTesByFilter,
     updateHasilTes,
 };
