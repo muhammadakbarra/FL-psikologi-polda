@@ -23,5 +23,9 @@ router.get(
     auth.verifyToken,
     mastersController.getUserCountByKesatuan
 );
-
+router.get(
+    '/user-count-all-kesatuan',
+    auth.verifyToken,
+    mastersController.getAllKesatuanWithUserCounts
+);
 module.exports = router;

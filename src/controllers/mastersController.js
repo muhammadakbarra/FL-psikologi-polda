@@ -103,8 +103,45 @@ const getTotalUserCount = async (req, res) => {
     }
 };
 
+const getAllKesatuanWithUserCounts = async (req, res) => {
+    try {
+        // Get all kesatuan units
+        const allKesatuan = await prisma.masterKesatuan.findMany({
+            select: {
+                id: true,
+                nama_kesatuan: true,
+            },
+        });
+
+        // Get user counts for each kesatuan
+        const result = await Promise.all(
+            allKesatuan.map(async (kesatuan) => {
+                const total = await prisma.user.count({
+                    where: { masterKesatuanId: kesatuan.id },
+                });
+
+                return {
+                    nama_kesatuan: kesatuan.nama_kesatuan,
+                    total: total.toString() // Converting to string as per your example
+                };
+            })
+        );
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Berhasil mengambil data kesatuan dengan jumlah user',
+            data: result
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Gagal mendapatkan data kesatuan dengan jumlah user',
+        });
+    }
+};
 module.exports = {
     getAllMastersKesatuanPangkat,
     getTotalUserCount,
     getUserCountByKesatuan,
+    getAllKesatuanWithUserCounts
 };
