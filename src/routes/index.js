@@ -14,6 +14,7 @@ const userBiodataRoutes = require('./userBiodataRoutes');
 const testSessionRoutes = require('./testSessionRoutes');
 const testAnswerRoutes = require('./testAnswerRoutes');
 const hasilRoutes = require('./hasilTesRoutes');
+const hasilTesExport = require('./hasilTesExportRoutes');
 
 const router = express.Router();
 
@@ -31,5 +32,5 @@ router.use('/soal', soalRoutes);
 router.use('/test-session', testSessionRoutes);
 router.use('/test-answer', testAnswerRoutes);
 router.use('/hasil-tes', hasilRoutes);
-
+router.use('/hasil-tes-export', hasilTesExport);
 module.exports = router;
