@@ -12,7 +12,7 @@ async function getAllUserBiodata(req, res) {
             nrp: u.biodata?.nrp || null,
             jabatan: u.biodata?.jabatan || null,
             pangkat: u.biodata?.masterPangkat?.nama_pangkat || null,
-            kesatuan: u.biodata?.masterKesatuan?.nama_kesatuan || null,
+            kesatuan: u.masterKesatuan?.nama_kesatuan || null, // diambil dari user (bukan biodata)
         }));
         res.status(200).json({
             status: 'success',
@@ -43,7 +43,7 @@ async function getUserBiodataById(req, res) {
             nrp: user.biodata?.nrp || null,
             jabatan: user.biodata?.jabatan || null,
             pangkat: user.biodata?.masterPangkat?.nama_pangkat || null,
-            kesatuan: user.biodata?.masterKesatuan?.nama_kesatuan || null,
+            kesatuan: user.masterKesatuan?.nama_kesatuan || null, // diambil dari user
         };
         res.status(200).json({
             status: 'success',
@@ -60,7 +60,7 @@ async function getUserBiodataById(req, res) {
 async function updateUserBiodata(req, res) {
     try {
         const { id } = req.params;
-        // Ambil data dari body
+        // Ambil data dari body; masterKesatuanId tidak lagi dipakai di biodata
         const {
             username,
             password,
@@ -68,7 +68,7 @@ async function updateUserBiodata(req, res) {
             nrp,
             jabatan,
             masterPangkatId,
-            masterKesatuanId,
+            // masterKesatuanId dihapus karena sekarang info kesatuan ada di tabel User
         } = req.body;
 
         const updatedUser = await userBiodataService.updateUserBiodata(
@@ -82,9 +82,6 @@ async function updateUserBiodata(req, res) {
                 masterPangkatId: masterPangkatId
                     ? parseInt(masterPangkatId)
                     : undefined,
-                masterKesatuanId: masterKesatuanId
-                    ? parseInt(masterKesatuanId)
-                    : undefined,
             }
         );
 
@@ -95,8 +92,7 @@ async function updateUserBiodata(req, res) {
             nrp: updatedUser.biodata?.nrp || null,
             jabatan: updatedUser.biodata?.jabatan || null,
             pangkat: updatedUser.biodata?.masterPangkat?.nama_pangkat || null,
-            kesatuan:
-                updatedUser.biodata?.masterKesatuan?.nama_kesatuan || null,
+            kesatuan: updatedUser.masterKesatuan?.nama_kesatuan || null, // diambil dari user
         };
 
         res.status(200).json({

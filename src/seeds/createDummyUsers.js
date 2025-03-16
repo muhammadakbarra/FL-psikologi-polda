@@ -85,7 +85,7 @@ async function seedKesatuan() {
     console.log('Selesai seeding MasterKesatuan');
 }
 
-// Tambahkan fungsi untuk seeding MasterJenisTes
+// Fungsi untuk seeding MasterJenisTes (contoh: PILIHAN GANDA, ESSAY)
 async function seedMasterJenisTes() {
     console.log('\n--- Seeding MasterJenisTes ---');
     const listJenisTes = ['PILIHAN GANDA', 'ESSAY'];
@@ -149,11 +149,17 @@ async function seedUsersAndAdmins() {
     });
     if (!userExists) {
         const hashedPassword = await bcrypt.hash('user123', 10);
+        // Ambil data master kesatuan default, misalnya "POLRES BONE"
+        const defaultKesatuan = await prisma.masterKesatuan.findUnique({
+            where: { nama_kesatuan: 'POLRES BONE' },
+        });
         await prisma.user.create({
             data: {
                 username: 'user',
                 password: hashedPassword,
                 id_biodata: null,
+                masterKesatuanId: defaultKesatuan ? defaultKesatuan.id : 1, // fallback jika tidak ditemukan
+                nama_kota: 'BONE',
             },
         });
         console.log('✅ User berhasil dibuat!');

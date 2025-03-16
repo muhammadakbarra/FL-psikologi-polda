@@ -4,15 +4,15 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 
 async function getAllUserBiodata() {
-    // Ambil semua user, beserta biodata, pangkat, kesatuan
+    // Ambil semua user, beserta biodata (dengan masterPangkat) dan masterKesatuan (dari user)
     return prisma.user.findMany({
         include: {
             biodata: {
                 include: {
                     masterPangkat: true,
-                    masterKesatuan: true,
                 },
             },
+            masterKesatuan: true,
         },
     });
 }
@@ -24,15 +24,15 @@ async function getUserBiodataById(id) {
             biodata: {
                 include: {
                     masterPangkat: true,
-                    masterKesatuan: true,
                 },
             },
+            masterKesatuan: true,
         },
     });
 }
 
 async function updateUserBiodata(id, data) {
-    // data dapat berisi: { username, password, nama_lengkap, nrp, jabatan, masterPangkatId, masterKesatuanId }
+    // Data dapat berisi: { username, password, nama_lengkap, nrp, jabatan, masterPangkatId }
     const {
         username,
         password,
@@ -40,7 +40,7 @@ async function updateUserBiodata(id, data) {
         nrp,
         jabatan,
         masterPangkatId,
-        masterKesatuanId,
+        // masterKesatuanId dihapus karena tidak ada di biodata
     } = data;
 
     // 1. Cari user terlebih dulu
@@ -54,14 +54,13 @@ async function updateUserBiodata(id, data) {
 
     // 3. Update atau buat biodata
     if (!user.id_biodata) {
-        // Jika user belum punya biodata, buat baru
+        // Jika user belum punya biodata, buat baru tanpa masterKesatuanId
         const newBio = await prisma.biodata.create({
             data: {
                 nama_lengkap: nama_lengkap || '',
                 nrp: nrp || '',
                 jabatan: jabatan || '',
                 masterPangkatId: masterPangkatId || 1,
-                masterKesatuanId: masterKesatuanId || 1,
             },
         });
         userUpdateData.id_biodata = newBio.id;
@@ -74,7 +73,6 @@ async function updateUserBiodata(id, data) {
                 nrp,
                 jabatan,
                 masterPangkatId,
-                masterKesatuanId,
             },
         });
     }
@@ -99,7 +97,7 @@ async function deleteUserBiodata(id) {
     // Hapus user
     await prisma.user.delete({ where: { id } });
 
-    // Opsional: hapus biodata jika Anda tidak ingin meninggalkan "orphan" data
+    // Hapus biodata jika ada untuk menghindari orphan data
     if (biodataId) {
         await prisma.biodata.delete({ where: { id: biodataId } });
     }

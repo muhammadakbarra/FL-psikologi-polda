@@ -1,13 +1,34 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Endpoint yang sudah ada: Mengambil data kesatuan (berdasarkan user login) dan semua data pangkat
 const getAllMastersKesatuanPangkat = async (req, res) => {
     try {
-        const kesatuan = await prisma.masterKesatuan.findMany();
+        const userId = req.user.id;
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { masterKesatuanId: true },
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'User tidak ditemukan, anda salah role!',
+            });
+        }
+
+        // Ambil data kesatuan berdasarkan masterKesatuanId dari user
+        const kesatuan = await prisma.masterKesatuan.findUnique({
+            where: { id: user.masterKesatuanId },
+            select: { id: true, nama_kesatuan: true },
+        });
+
+        // Ambil semua data pangkat
         const pangkat = await prisma.masterPangkat.findMany();
 
         res.status(200).json({
             status: 'success',
+            message: 'Berhasil mengambil data masters',
             data: {
                 kesatuan,
                 pangkat,
@@ -21,4 +42,69 @@ const getAllMastersKesatuanPangkat = async (req, res) => {
     }
 };
 
-module.exports = { getAllMastersKesatuanPangkat };
+// API baru: Mengambil total jumlah user berdasarkan kesatuan menggunakan parameter :kesatuanId
+const getUserCountByKesatuan = async (req, res) => {
+    try {
+        const kesatuanId = parseInt(req.params.kesatuanId);
+        if (isNaN(kesatuanId)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'kesatuanId harus berupa angka',
+            });
+        }
+
+        const total = await prisma.user.count({
+            where: { masterKesatuanId: kesatuanId },
+        });
+
+        const kesatuan = await prisma.masterKesatuan.findUnique({
+            where: { id: kesatuanId },
+            select: { id: true, nama_kesatuan: true },
+        });
+
+        if (!kesatuan) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Kesatuan tidak ditemukan',
+            });
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Berhasil mengambil total user berdasarkan kesatuan',
+            data: {
+                kesatuan,
+                total,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message:
+                error.message ||
+                'Gagal mendapatkan total user berdasarkan kesatuan',
+        });
+    }
+};
+
+const getTotalUserCount = async (req, res) => {
+    try {
+        const total = await prisma.user.count();
+        res.status(200).json({
+            status: 'success',
+            message: 'Berhasil mengambil total user',
+            data: { total },
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Gagal mendapatkan total user',
+        });
+    }
+};
+
+module.exports = {
+    getAllMastersKesatuanPangkat,
+    getTotalUserCount,
+    getUserCountByKesatuan,
+};

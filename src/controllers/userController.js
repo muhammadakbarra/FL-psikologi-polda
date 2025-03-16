@@ -6,12 +6,13 @@ const userService = require('../services/userService');
 
 const createUser = async (req, res) => {
     try {
-        const { username, password, id_biodata } = req.body;
+        const { username, password, id_biodata, masterKesatuanId, nama_kota } =
+            req.body;
 
-        if (!username || !password) {
+        if (!username || !password || !masterKesatuanId) {
             return res.status(400).json({
                 status: 'error',
-                message: 'Username dan password harus diisi',
+                message: 'Username, password, dan masterKesatuanId harus diisi',
             });
         }
 
@@ -19,6 +20,8 @@ const createUser = async (req, res) => {
             username,
             password,
             id_biodata: id_biodata || null,
+            masterKesatuanId,
+            nama_kota,
         });
 
         res.status(201).json({
@@ -29,6 +32,8 @@ const createUser = async (req, res) => {
                     id: user.id,
                     username: user.username,
                     id_biodata: user.id_biodata,
+                    masterKesatuanId: user.masterKesatuanId,
+                    nama_kota: user.nama_kota,
                 },
             },
         });
@@ -87,9 +92,10 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { username, password, id_biodata } = req.body;
+        const { username, password, id_biodata, masterKesatuanId, nama_kota } =
+            req.body;
 
-        // Verifikasi akses
+        // Verifikasi akses: hanya user sendiri yang boleh update, jika role-nya user
         if (req.userType === 'user' && req.user.id !== parseInt(id)) {
             return res.status(403).json({
                 status: 'error',
@@ -101,6 +107,8 @@ const updateUser = async (req, res) => {
             username,
             password,
             id_biodata,
+            masterKesatuanId,
+            nama_kota,
         });
 
         res.status(200).json({
@@ -111,6 +119,8 @@ const updateUser = async (req, res) => {
                     id: updatedUser.id,
                     username: updatedUser.username,
                     id_biodata: updatedUser.id_biodata,
+                    masterKesatuanId: updatedUser.masterKesatuanId,
+                    nama_kota: updatedUser.nama_kota,
                 },
             },
         });
@@ -126,7 +136,7 @@ const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Verifikasi akses
+        // Verifikasi akses: hanya user sendiri yang boleh delete, jika role-nya user
         if (req.userType === 'user' && req.user.id !== parseInt(id)) {
             return res.status(403).json({
                 status: 'error',
@@ -147,16 +157,15 @@ const deleteUser = async (req, res) => {
         });
     }
 };
-
 const createBatchUsers = async (req, res) => {
     try {
-        // Menggunakan masterKesatuanId sebagai input, bukan kesatuan
-        const { masterKesatuanId, jumlah } = req.body;
+        // Input yang dibutuhkan: masterKesatuanId, nama_kota, dan jumlah user yang akan dibuat
+        const { masterKesatuanId, nama_kota, jumlah } = req.body;
 
-        if (!masterKesatuanId || !jumlah) {
+        if (!masterKesatuanId || !nama_kota || !jumlah) {
             return res.status(400).json({
                 status: 'error',
-                message: 'masterKesatuanId dan jumlah harus diisi',
+                message: 'masterKesatuanId, nama_kota, dan jumlah harus diisi',
             });
         }
 
@@ -168,7 +177,7 @@ const createBatchUsers = async (req, res) => {
             });
         }
 
-        // Ambil data Master Kesatuan untuk mendapatkan prefix
+        // Cek apakah masterKesatuan dengan masterKesatuanId ada
         const masterKesatuan = await prisma.masterKesatuan.findUnique({
             where: { id: masterKesatuanId },
         });
@@ -178,9 +187,11 @@ const createBatchUsers = async (req, res) => {
                 message: 'Master Kesatuan tidak ditemukan',
             });
         }
-        const prefix = masterKesatuan.nama_kesatuan;
 
-        // Cari user existing dengan prefix yang sama
+        // Gunakan nama_kota sebagai prefix untuk username
+        const prefix = nama_kota; // misalnya "bone"
+
+        // Cari user existing dengan prefix yang sama untuk menentukan nomor urut
         const existingUsers = await prisma.user.findMany({
             where: {
                 username: {
@@ -214,6 +225,8 @@ const createBatchUsers = async (req, res) => {
                     data: {
                         username,
                         password: hashedPassword,
+                        masterKesatuanId,
+                        nama_kota,
                         id_biodata: null,
                     },
                 });
@@ -259,7 +272,7 @@ const checkUserBiodata = async (req, res) => {
             });
         }
 
-        // Cek id_biodata
+        // Cek apakah user memiliki biodata
         const hasBiodata = user.id_biodata !== null;
 
         return res.status(200).json({

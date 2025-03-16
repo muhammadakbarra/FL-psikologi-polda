@@ -11,15 +11,19 @@ datasource db {
 }
 
 model User {
-  id              Int               @id @default(autoincrement())
-  username        String            @unique
-  password        String
-  id_biodata      Int? // Foreign key (future)
-  // Tambahkan relasi ini agar Prisma bisa include biodata langsung
-  biodata         Biodata?          @relation(fields: [id_biodata], references: [id])
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  UserTestSession UserTestSession[]
+  id               Int            @id @default(autoincrement())
+  username         String         @unique
+  password         String
+  masterKesatuanId Int            // Menyimpan informasi kesatuan
+  nama_kota        String?        // Menyimpan nama kota (opsional)
+  id_biodata       Int?           // Masih bisa digunakan untuk relasi biodata (jika diperlukan)
+  biodata          Biodata?       @relation(fields: [id_biodata], references: [id])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  UserTestSession  UserTestSession[]
+
+  // Relasi ke MasterKesatuan
+  masterKesatuan   MasterKesatuan @relation(fields: [masterKesatuanId], references: [id])
 }
 
 model Admin {
@@ -43,7 +47,7 @@ model MasterJenisTes {
   updatedAt      DateTime @updatedAt
 
   // Relasi satu ke banyak ke KategoriTes
-  kategoriTes KategoriTes[]
+  kategoriTes    KategoriTes[]
 }
 
 model KategoriTes {
@@ -54,11 +58,11 @@ model KategoriTes {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  masterJenisTes MasterJenisTes @relation(fields: [masterJenisTesId], references: [id])
+  masterJenisTes    MasterJenisTes @relation(fields: [masterJenisTesId], references: [id])
 
-  // Relasi balik ke Soal
-  soal            Soal[]
-  UserTestSession UserTestSession[]
+  // Relasi balik ke Soal dan UserTestSession
+  soal              Soal[]
+  UserTestSession   UserTestSession[]
 }
 
 model MasterKesatuan {
@@ -67,8 +71,8 @@ model MasterKesatuan {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Tambahkan relasi balik ke Biodata
-  biodata Biodata[]
+  // Relasi balik ke User karena informasi kesatuan disimpan di User
+  users         User[]
 }
 
 model MasterPangkat {
@@ -77,39 +81,38 @@ model MasterPangkat {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // Tambahkan relasi balik ke Biodata
-  biodata Biodata[]
+  // Relasi balik ke Biodata
+  biodata      Biodata[]
 }
 
 model Biodata {
-  id               Int      @id @default(autoincrement())
-  nama_lengkap     String
-  nrp              String
-  jabatan          String
-  masterKesatuanId Int
-  masterPangkatId  Int
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  nama_lengkap    String
+  nrp             String
+  jabatan         String
+  masterPangkatId Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  masterKesatuan MasterKesatuan @relation(fields: [masterKesatuanId], references: [id])
-  masterPangkat  MasterPangkat  @relation(fields: [masterPangkatId], references: [id])
-  User           User[]
+  masterPangkat   MasterPangkat @relation(fields: [masterPangkatId], references: [id])
+  // Relasi ke User tetap disimpan sebagai back-relation (opsional)
+  User            User[]
 }
 
 model Soal {
   id            Int      @id @default(autoincrement())
   kategoriTesId Int
   teks_soal     String?  @db.Text
-  gambar_soal   String? // Nullable untuk soal tanpa gambar
+  gambar_soal   String?  // Nullable untuk soal tanpa gambar
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relasi ke kategori tes
-  kategoriTes KategoriTes @relation(fields: [kategoriTesId], references: [id])
+  // Relasi ke KategoriTes
+  kategoriTes   KategoriTes @relation(fields: [kategoriTesId], references: [id])
 
-  // Relasi one-to-many ke pilihan jawaban
+  // Relasi one-to-many ke PilihanJawaban dan UserAnswer
   pilihanJawaban PilihanJawaban[]
-  UserAnswer     UserAnswer[]
+  UserAnswer    UserAnswer[]
 }
 
 model PilihanJawaban {
@@ -120,38 +123,38 @@ model PilihanJawaban {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relasi ke soal
-  soal       Soal         @relation(fields: [soalId], references: [id])
-  UserAnswer UserAnswer[]
+  // Relasi ke Soal
+  soal           Soal @relation(fields: [soalId], references: [id])
+  UserAnswer     UserAnswer[]
 }
 
 model UserTestSession {
   id             Int       @id @default(autoincrement())
   userId         Int
   kategoriTesId  Int
-  noTes          String? // Boleh null
-  jenisPengajuan String? // Boleh null
+  noTes          String?   // Boleh null
+  jenisPengajuan String?   // Boleh null
   startedAt      DateTime?
   finishedAt     DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  user        User         @relation(fields: [userId], references: [id])
-  kategoriTes KategoriTes  @relation(fields: [kategoriTesId], references: [id])
-  userAnswers UserAnswer[]
+  user           User       @relation(fields: [userId], references: [id])
+  kategoriTes    KategoriTes @relation(fields: [kategoriTesId], references: [id])
+  userAnswers    UserAnswer[]
 }
 
 model UserAnswer {
   id                Int      @id @default(autoincrement())
   userTestSessionId Int
   soalId            Int
-  pilihanJawabanId  Int? // Boleh null jika essay
-  teks_jawaban      String? // Boleh null jika pilihan ganda
+  pilihanJawabanId  Int?     // Boleh null jika essay
+  teks_jawaban      String?  // Boleh null jika pilihan ganda
   answeredAt        DateTime @default(now())
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  userTestSession UserTestSession @relation(fields: [userTestSessionId], references: [id])
-  soal            Soal            @relation(fields: [soalId], references: [id])
-  pilihanJawaban  PilihanJawaban? @relation(fields: [pilihanJawabanId], references: [id])
+  userTestSession   UserTestSession @relation(fields: [userTestSessionId], references: [id])
+  soal              Soal            @relation(fields: [soalId], references: [id])
+  pilihanJawaban    PilihanJawaban? @relation(fields: [pilihanJawabanId], references: [id])
 }

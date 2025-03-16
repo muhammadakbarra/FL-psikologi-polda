@@ -4,20 +4,18 @@ const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
 
 const createUser = async (userData) => {
-    // Cek username sudah digunakan
+    // Cek username sudah digunakan di tabel User
     const existingUser = await prisma.user.findUnique({
         where: { username: userData.username },
     });
-
     if (existingUser) {
         throw new Error('Username sudah digunakan');
     }
 
-    // Cek juga di tabel admin
+    // Cek juga di tabel Admin
     const existingAdmin = await prisma.admin.findUnique({
         where: { username: userData.username },
     });
-
     if (existingAdmin) {
         throw new Error('Username sudah digunakan oleh admin');
     }
@@ -25,12 +23,14 @@ const createUser = async (userData) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    // Buat user baru
+    // Buat user baru dengan field tambahan masterKesatuanId dan nama_kota
     return prisma.user.create({
         data: {
             username: userData.username,
             password: hashedPassword,
-            id_biodata: userData.id_biodata,
+            masterKesatuanId: userData.masterKesatuanId,
+            nama_kota: userData.nama_kota,
+            id_biodata: userData.id_biodata || null,
         },
     });
 };
@@ -40,6 +40,8 @@ const getAllUsers = async () => {
         select: {
             id: true,
             username: true,
+            masterKesatuanId: true,
+            nama_kota: true,
             id_biodata: true,
             createdAt: true,
             updatedAt: true,
@@ -53,6 +55,8 @@ const getUserById = async (id) => {
         select: {
             id: true,
             username: true,
+            masterKesatuanId: true,
+            nama_kota: true,
             id_biodata: true,
             createdAt: true,
             updatedAt: true,
@@ -65,36 +69,41 @@ const updateUser = async (id, data) => {
 
     if (data.username) {
         // Cek apakah username baru sudah digunakan
-        if (data.username) {
-            const existingUser = await prisma.user.findFirst({
-                where: {
-                    username: data.username,
-                    id: { not: id },
-                },
-            });
-
-            if (existingUser) {
-                throw new Error('Username sudah digunakan');
-            }
-
-            const existingAdmin = await prisma.admin.findUnique({
-                where: { username: data.username },
-            });
-
-            if (existingAdmin) {
-                throw new Error('Username sudah digunakan oleh admin');
-            }
-
-            updates.username = data.username;
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                username: data.username,
+                id: { not: id },
+            },
+        });
+        if (existingUser) {
+            throw new Error('Username sudah digunakan');
         }
+
+        const existingAdmin = await prisma.admin.findUnique({
+            where: { username: data.username },
+        });
+        if (existingAdmin) {
+            throw new Error('Username sudah digunakan oleh admin');
+        }
+
+        updates.username = data.username;
     }
 
     if (data.password) {
         updates.password = await bcrypt.hash(data.password, 10);
     }
 
+    // Update field biodata jika ada
     if (data.id_biodata !== undefined) {
         updates.id_biodata = data.id_biodata;
+    }
+
+    // Update field masterKesatuanId dan nama_kota jika disediakan
+    if (data.masterKesatuanId !== undefined) {
+        updates.masterKesatuanId = data.masterKesatuanId;
+    }
+    if (data.nama_kota !== undefined) {
+        updates.nama_kota = data.nama_kota;
     }
 
     return prisma.user.update({
@@ -103,6 +112,8 @@ const updateUser = async (id, data) => {
         select: {
             id: true,
             username: true,
+            masterKesatuanId: true,
+            nama_kota: true,
             id_biodata: true,
             createdAt: true,
             updatedAt: true,
