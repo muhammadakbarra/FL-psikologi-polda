@@ -53,10 +53,6 @@ const getUserCountByKesatuan = async (req, res) => {
             });
         }
 
-        const total = await prisma.user.count({
-            where: { masterKesatuanId: kesatuanId },
-        });
-
         const kesatuan = await prisma.masterKesatuan.findUnique({
             where: { id: kesatuanId },
             select: { id: true, nama_kesatuan: true },
@@ -69,9 +65,13 @@ const getUserCountByKesatuan = async (req, res) => {
             });
         }
 
+        const total = await prisma.user.count({
+            where: { masterKesatuanId: kesatuanId },
+        });
+
         res.status(200).json({
             status: 'success',
-            message: 'Berhasil mengambil total user berdasarkan kesatuan',
+            message: `Berhasil mengambil total user untuk kesatuan ${kesatuan.nama_kesatuan}`,
             data: {
                 kesatuan,
                 total,
