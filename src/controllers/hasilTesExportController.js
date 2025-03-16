@@ -2,7 +2,8 @@ const ExcelJS = require('exceljs');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Feature 2: Export test results for a specific test session to Excel
+// Fitur 2: Export test results untuk sesi tertentu ke Excel
+// Format: Kolom A berisi field label, dan kolom B (satu user) berisi nilai masing-masing
 const exportTestResults = async (req, res) => {
     try {
         const { userTestSessionId, kategoriTesId } = req.query;
@@ -32,67 +33,85 @@ const exportTestResults = async (req, res) => {
         });
 
         if (!session) {
-            return res
-                .status(404)
-                .json({
-                    status: 'error',
-                    message: 'Test session tidak ditemukan atau belum selesai',
-                });
+            return res.status(404).json({
+                status: 'error',
+                message: 'Test session tidak ditemukan atau belum selesai',
+            });
         }
+
+        // Sort userAnswers berdasarkan soal.id agar urutannya konsisten
+        session.userAnswers.sort((a, b) => a.soal.id - b.soal.id);
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Test Results');
 
-        // Header row
-        worksheet.addRow([
-            'No',
-            'Username',
-            'Nama Lengkap',
-            'NRP',
-            'Kategori Tes',
-            'Kesatuan',
-            'Soal',
-            'Jawaban',
-        ]);
+        // Daftar field tetap
+        const fixedFields = [
+            { label: 'User Test Session ID', value: session.id },
+            { label: 'User ID', value: session.user.id },
+            { label: 'KategoriTes ID', value: session.kategoriTesId },
+            { label: 'No Tes', value: session.noTes || '' },
+            {
+                label: 'Nama Kategori',
+                value: session.kategoriTes?.nama_kategori_tes || '',
+            },
+            { label: 'Username', value: session.user.username },
+            { label: 'NRP', value: session.user.biodata?.nrp || '' },
+            {
+                label: 'Kesatuan',
+                value: session.user.masterKesatuan?.nama_kesatuan || '',
+            },
+            { label: 'Started At', value: session.startedAt },
+            { label: 'Finished At', value: session.finishedAt },
+        ];
 
-        session.userAnswers.forEach((answer, index) => {
-            const username = session.user.username;
-            const namaLengkap = session.user.biodata?.nama_lengkap || '';
-            const nrp = session.user.biodata?.nrp || '';
-            const kategori = session.kategoriTes?.nama_kategori_tes || '';
-            const kesatuan = session.user.masterKesatuan?.nama_kesatuan || '';
-            const soal = answer.soal?.teks_soal || '';
-            let jawaban = '';
+        // Ambil label soal dari setiap userAnswer (asumsi urutannya sama)
+        const questionLabels = session.userAnswers.map((ans, idx) => {
+            const soalText = ans.soal?.teks_soal || `Soal ${idx + 1}`;
+            return { label: `Q${idx + 1}: ${soalText}` };
+        });
 
+        // Buat header kolom (Field) pada kolom A dan data user pada kolom B
+        // Kolom A: daftar field (fixedFields + questionLabels)
+        // Kolom B: nilai dari session untuk masing-masing field
+        let rowIndex = 1;
+        // Buat header judul pada cell A1
+        worksheet.getCell(`A1`).value = 'Field';
+        worksheet.getCell(`B1`).value = session.user.username; // nama user sebagai header kolom B
+
+        // Tulis fixed fields mulai dari baris 2
+        fixedFields.forEach((field) => {
+            rowIndex++;
+            worksheet.getCell(`A${rowIndex}`).value = field.label;
+            worksheet.getCell(`B${rowIndex}`).value = field.value;
+        });
+
+        // Tulis setiap pertanyaan (soal) dan jawaban
+        session.userAnswers.forEach((ans, idx) => {
+            rowIndex++;
+            const label = `Q${idx + 1}: ${ans.soal?.teks_soal || ''}`;
+            // Jika pilihan jawaban ada, urutkan dan format dengan huruf; jika tidak, gunakan teks jawaban
+            let answerText = '';
             if (
-                answer.soal &&
-                answer.soal.pilihanJawaban &&
-                answer.soal.pilihanJawaban.length > 0
+                ans.soal &&
+                ans.soal.pilihanJawaban &&
+                ans.soal.pilihanJawaban.length > 0
             ) {
-                const options = answer.soal.pilihanJawaban.sort(
+                const options = ans.soal.pilihanJawaban.sort(
                     (a, b) => a.id - b.id
                 );
                 const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-                jawaban = options
+                answerText = options
                     .map(
-                        (option, idx) =>
-                            `${letters[idx] || ''}: ${option.teks_pilihan}`
+                        (option, i) =>
+                            `${letters[i] || ''}: ${option.teks_pilihan}`
                     )
                     .join(', ');
             } else {
-                jawaban = answer.teks_jawaban || '';
+                answerText = ans.teks_jawaban || '';
             }
-
-            worksheet.addRow([
-                index + 1,
-                username,
-                namaLengkap,
-                nrp,
-                kategori,
-                kesatuan,
-                soal,
-                jawaban,
-            ]);
+            worksheet.getCell(`A${rowIndex}`).value = label;
+            worksheet.getCell(`B${rowIndex}`).value = answerText;
         });
 
         res.setHeader(
@@ -114,11 +133,25 @@ const exportTestResults = async (req, res) => {
     }
 };
 
-// Feature 3: Export consolidated test results for all users into one Excel file
+// Fitur 3: Export test results konsolidasi untuk semua user ke Excel
+// Format: Kolom A: Field, tiap kolom selanjutnya: data untuk tiap user
 const exportConsolidatedResults = async (req, res) => {
     try {
+        const { kategoriTesId, kesatuanId } = req.query;
+        if (!kategoriTesId || !kesatuanId) {
+            return res.status(400).json({
+                status: 'error',
+                message:
+                    'kategoriTesId dan kesatuanId harus disertakan sebagai query parameter',
+            });
+        }
+
         const sessions = await prisma.userTestSession.findMany({
-            where: { finishedAt: { not: null } },
+            where: {
+                finishedAt: { not: null },
+                kategoriTesId: parseInt(kategoriTesId),
+                user: { masterKesatuanId: parseInt(kesatuanId) },
+            },
             include: {
                 user: { include: { biodata: true, masterKesatuan: true } },
                 kategoriTes: true,
@@ -130,96 +163,105 @@ const exportConsolidatedResults = async (req, res) => {
             },
         });
 
-        // Group sessions by user id (mengambil sesi pertama untuk tiap user)
+        if (!sessions || sessions.length === 0) {
+            return res.status(404).json({
+                status: 'error',
+                message:
+                    'Tidak ada sesi yang ditemukan dengan filter yang diberikan',
+            });
+        }
+
+        // Group sessions by user id (gunakan sesi pertama tiap user)
         const grouped = {};
         sessions.forEach((session) => {
             const userId = session.user.id;
             if (!grouped[userId]) {
+                // Urutkan jawaban berdasarkan soal.id
+                session.userAnswers.sort((a, b) => a.soal.id - b.soal.id);
                 grouped[userId] = session;
             }
         });
 
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Consolidated Results');
+        const userSessions = Object.values(grouped);
 
-        // Header: Baris pertama: Field, kemudian tiap kolom untuk setiap user
-        const header = ['Field'];
-        const userIds = Object.keys(grouped);
-        userIds.forEach((userId) => {
-            const session = grouped[userId];
-            header.push(session.user.username);
-        });
-        worksheet.addRow(header);
-
-        const fields = [
-            { label: 'Username', getter: (session) => session.user.username },
+        // Fixed fields untuk setiap user
+        const fixedFields = [
+            { label: 'Username', getter: (s) => s.user.username },
             {
                 label: 'Nama Lengkap',
-                getter: (session) => session.user.biodata?.nama_lengkap || '',
+                getter: (s) => s.user.biodata?.nama_lengkap || '',
             },
-            {
-                label: 'NRP',
-                getter: (session) => session.user.biodata?.nrp || '',
-            },
+            { label: 'NRP', getter: (s) => s.user.biodata?.nrp || '' },
             {
                 label: 'Kategori Tes',
-                getter: (session) =>
-                    session.kategoriTes?.nama_kategori_tes || '',
+                getter: (s) => s.kategoriTes?.nama_kategori_tes || '',
             },
             {
                 label: 'Kesatuan',
-                getter: (session) =>
-                    session.user.masterKesatuan?.nama_kesatuan || '',
+                getter: (s) => s.user.masterKesatuan?.nama_kesatuan || '',
             },
             {
-                label: 'Soal',
-                getter: (session) =>
-                    session.userAnswers
-                        .map(
-                            (ans, idx) =>
-                                `${idx + 1}. ${ans.soal?.teks_soal || ''}`
-                        )
-                        .join('\n'),
+                label: 'Pangkat',
+                getter: (s) =>
+                    s.user.biodata?.masterPangkat?.nama_pangkat || '',
             },
-            {
-                label: 'Jawaban',
-                getter: (session) => {
-                    return session.userAnswers
-                        .map((ans, idx) => {
-                            if (
-                                ans.soal &&
-                                ans.soal.pilihanJawaban &&
-                                ans.soal.pilihanJawaban.length > 0
-                            ) {
-                                const options = ans.soal.pilihanJawaban.sort(
-                                    (a, b) => a.id - b.id
-                                );
-                                const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-                                return (
-                                    `${idx + 1}. ` +
-                                    options
-                                        .map(
-                                            (option, i) =>
-                                                `${letters[i] || ''}: ${
-                                                    option.teks_pilihan
-                                                }`
-                                        )
-                                        .join(', ')
-                                );
-                            } else {
-                                return `${idx + 1}. ${ans.teks_jawaban || ''}`;
-                            }
-                        })
-                        .join('\n');
-                },
-            },
+            { label: 'Started At', getter: (s) => s.startedAt },
+            { label: 'Finished At', getter: (s) => s.finishedAt },
         ];
 
-        fields.forEach((field) => {
+        // Buat workbook dan worksheet
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Consolidated Results');
+
+        // Baris 1: Header kolom untuk setiap user
+        // Kolom A: "Field", kolom selanjutnya: username tiap user
+        const headerRow = ['Field'];
+        userSessions.forEach((s) => headerRow.push(s.user.username));
+        worksheet.addRow(headerRow);
+
+        // Baris-baris berikutnya: setiap baris adalah field, kemudian nilai dari tiap user
+        fixedFields.forEach((field) => {
             const row = [field.label];
-            userIds.forEach((userId) => {
-                const session = grouped[userId];
-                row.push(field.getter(session));
+            userSessions.forEach((s) => {
+                row.push(field.getter(s));
+            });
+            worksheet.addRow(row);
+        });
+
+        // Untuk setiap soal, ambil label soal sebagai field dan masing-masing jawaban
+        // Asumsikan semua user memiliki jumlah soal yang sama berdasarkan sesi pertama
+        const firstSession = userSessions[0];
+        firstSession.userAnswers.sort((a, b) => a.soal.id - b.soal.id);
+        firstSession.userAnswers.forEach((ans, idx) => {
+            const row = [`Q${idx + 1}: ${ans.soal?.teks_soal || ''}`];
+            userSessions.forEach((s) => {
+                // Temukan jawaban untuk soal ke-(idx) pada sesi user s
+                s.userAnswers.sort((a, b) => a.soal.id - b.soal.id);
+                const answer = s.userAnswers[idx];
+                let answerText = '';
+                if (answer) {
+                    if (
+                        answer.soal &&
+                        answer.soal.pilihanJawaban &&
+                        answer.soal.pilihanJawaban.length > 0
+                    ) {
+                        const options = answer.soal.pilihanJawaban.sort(
+                            (a, b) => a.id - b.id
+                        );
+                        const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+                        answerText = options
+                            .map(
+                                (option, i) =>
+                                    `${letters[i] || ''}: ${
+                                        option.teks_pilihan
+                                    }`
+                            )
+                            .join(', ');
+                    } else {
+                        answerText = answer.teks_jawaban || '';
+                    }
+                }
+                row.push(answerText);
             });
             worksheet.addRow(row);
         });
