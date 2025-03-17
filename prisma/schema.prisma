@@ -14,15 +14,14 @@ model User {
   id               Int               @id @default(autoincrement())
   username         String            @unique
   password         String
-  masterKesatuanId Int // Menyimpan informasi kesatuan
-  nama_kota        String? // Menyimpan nama kota (opsional)
-  id_biodata       Int? // Masih bisa digunakan untuk relasi biodata (jika diperlukan)
+  masterKesatuanId Int
+  nama_kota        String?
+  id_biodata       Int?
   biodata          Biodata?          @relation(fields: [id_biodata], references: [id])
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   UserTestSession  UserTestSession[]
 
-  // Relasi ke MasterKesatuan
   masterKesatuan MasterKesatuan @relation(fields: [masterKesatuanId], references: [id])
 }
 
@@ -57,7 +56,7 @@ model KategoriTes {
   masterJenisTesId  Int
   waktu_pengerjaan  String
   createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  updatedAt         DateTime @default(now())
 
   masterJenisTes MasterJenisTes @relation(fields: [masterJenisTesId], references: [id])
 
@@ -70,9 +69,8 @@ model MasterKesatuan {
   id            Int      @id @default(autoincrement())
   nama_kesatuan String   @unique
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime @default(now())
 
-  // Relasi balik ke User karena informasi kesatuan disimpan di User
   users User[]
 }
 
@@ -80,9 +78,8 @@ model MasterPangkat {
   id           Int      @id @default(autoincrement())
   nama_pangkat String   @unique
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime @default(now())
 
-  // Relasi balik ke Biodata
   biodata Biodata[]
 }
 
@@ -93,10 +90,9 @@ model Biodata {
   jabatan         String
   masterPangkatId Int
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime @default(now())
 
   masterPangkat MasterPangkat @relation(fields: [masterPangkatId], references: [id])
-  // Relasi ke User tetap disimpan sebagai back-relation (opsional)
   User          User[]
 }
 
@@ -104,12 +100,12 @@ model Soal {
   id            Int      @id @default(autoincrement())
   kategoriTesId Int
   teks_soal     String?  @db.Text
-  gambar_soal   String? // Nullable untuk soal tanpa gambar
+  gambar_soal   String?
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime @default(now())
 
-  // Relasi ke KategoriTes
-  kategoriTes KategoriTes @relation(fields: [kategoriTesId], references: [id])
+  // Relasi ke KategoriTes (onDelete: Cascade)
+  kategoriTes KategoriTes @relation(fields: [kategoriTesId], references: [id], onDelete: Cascade)
 
   // Relasi one-to-many ke PilihanJawaban dan UserAnswer
   pilihanJawaban PilihanJawaban[]
@@ -122,10 +118,12 @@ model PilihanJawaban {
   teks_pilihan   String?  @db.Text
   gambar_pilihan String?
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime @default(now())
 
-  // Relasi ke Soal
-  soal       Soal         @relation(fields: [soalId], references: [id])
+  // Relasi ke Soal (onDelete: Cascade)
+  soal Soal @relation(fields: [soalId], references: [id], onDelete: Cascade)
+
+  // Relasi ke UserAnswer
   UserAnswer UserAnswer[]
 }
 
@@ -133,12 +131,12 @@ model UserTestSession {
   id             Int       @id @default(autoincrement())
   userId         Int
   kategoriTesId  Int
-  noTes          String? // Boleh null
-  jenisPengajuan String? // Boleh null
+  noTes          String?
+  jenisPengajuan String?
   startedAt      DateTime?
   finishedAt     DateTime?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now())
 
   user        User         @relation(fields: [userId], references: [id])
   kategoriTes KategoriTes  @relation(fields: [kategoriTesId], references: [id])
@@ -150,15 +148,15 @@ model UserAnswer {
   id                Int      @id @default(autoincrement())
   userTestSessionId Int
   soalId            Int
-  pilihanJawabanId  Int? // Boleh null jika essay
-  teks_jawaban      String? // Boleh null jika pilihan ganda
+  pilihanJawabanId  Int?
+  teks_jawaban      String?
   answeredAt        DateTime @default(now())
   createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  updatedAt         DateTime @default(now())
 
   userTestSession UserTestSession @relation(fields: [userTestSessionId], references: [id])
-  soal            Soal            @relation(fields: [soalId], references: [id])
-  pilihanJawaban  PilihanJawaban? @relation(fields: [pilihanJawabanId], references: [id])
+  soal            Soal            @relation(fields: [soalId], references: [id], onDelete: Cascade)
+  pilihanJawaban  PilihanJawaban? @relation(fields: [pilihanJawabanId], references: [id], onDelete: Cascade)
 }
 
 enum HasilTesStatus {
@@ -171,10 +169,10 @@ model HasilTes {
   id                Int            @id @default(autoincrement())
   userTestSessionId Int
   status            HasilTesStatus @default(MENUNGGU)
-  keterangan        String? // Opsional, admin dapat mengisi keterangan
-  adminId           Int? // Opsional, menyimpan id admin yang memverifikasi
+  keterangan        String?
+  adminId           Int?
   createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  updatedAt         DateTime       @default(now())
 
   userTestSession UserTestSession @relation(fields: [userTestSessionId], references: [id])
   admin           Admin?          @relation(fields: [adminId], references: [id])
