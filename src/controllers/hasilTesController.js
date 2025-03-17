@@ -88,6 +88,7 @@ const getHasilTesByFilter = async (req, res) => {
 
         const result = hasilTesList.map((item) => ({
             id: item.id,
+            noTes: item.userTestSession?.noTes || null,
             username: item.userTestSession?.user?.username || null,
             nrp: item.userTestSession?.user?.biodata?.nrp || null,
             kategoriTes:
@@ -149,6 +150,7 @@ const updateHasilTes = async (req, res) => {
 
         const result = {
             id: updated.id,
+            noTes: updated.item.userTestSession?.noTes || null,
             username: updated.userTestSession?.user?.username || null,
             nrp: updated.userTestSession?.user?.biodata?.nrp || null,
             kategoriTes:
