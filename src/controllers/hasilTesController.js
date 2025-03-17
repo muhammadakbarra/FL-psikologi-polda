@@ -20,6 +20,7 @@ const getAllHasilTes = async (req, res) => {
 
         const result = hasilTesList.map((item) => ({
             id: item.id,
+            noTes: item.userTestSession?.noTes || null,
             username: item.userTestSession?.user?.username || null,
             nrp: item.userTestSession?.user?.biodata?.nrp || null,
             kategoriTes:
@@ -177,8 +178,66 @@ const updateHasilTes = async (req, res) => {
     }
 };
 
+// API GET: Mengambil hasil tes berdasarkan userId
+const getHasilTesByUserId = async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+        const hasilTesList = await prisma.hasilTes.findMany({
+            where: {
+                userTestSession: {
+                    userId: userId,
+                },
+            },
+            include: {
+                userTestSession: {
+                    include: {
+                        user: {
+                            include: { biodata: true },
+                        },
+                        kategoriTes: true,
+                    },
+                },
+                admin: true,
+            },
+        });
+
+        const result = hasilTesList.map((item) => ({
+            id: item.id,
+            noTes: item.userTestSession?.noTes || null,
+            username: item.userTestSession?.user?.username || null,
+            nrp: item.userTestSession?.user?.biodata?.nrp || null,
+            kategoriTes:
+                item.userTestSession?.kategoriTes?.nama_kategori_tes || null,
+            waktu_pengerjaan:
+                item.userTestSession?.kategoriTes?.waktu_pengerjaan || null,
+            finishedAt: item.userTestSession?.finishedAt || null,
+            status: item.status,
+            keterangan: item.keterangan || null,
+            admin: item.admin
+                ? { id: item.admin.id, username: item.admin.username }
+                : null,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+        }));
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Berhasil mengambil data hasil tes berdasarkan userId',
+            data: result,
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message:
+                error.message ||
+                'Gagal mendapatkan data hasil tes berdasarkan userId',
+        });
+    }
+};
+
 module.exports = {
     getAllHasilTes,
     getHasilTesByFilter,
     updateHasilTes,
+    getHasilTesByUserId,
 };

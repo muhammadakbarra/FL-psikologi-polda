@@ -12,4 +12,11 @@ router.get('/filter', auth.verifyToken, hasilTesController.getHasilTesByFilter);
 // Memperbarui status dan keterangan hasil tes
 router.put('/:id', auth.verifyToken, hasilTesController.updateHasilTes);
 
+// Mengambil hasil tes berdasarkan userId
+router.get(
+    '/user/:userId',
+    auth.verifyToken,
+    hasilTesController.getHasilTesByUserId
+);
+
 module.exports = router;
