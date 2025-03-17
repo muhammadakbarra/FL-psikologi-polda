@@ -150,7 +150,7 @@ const updateHasilTes = async (req, res) => {
 
         const result = {
             id: updated.id,
-            noTes: updated.item.userTestSession?.noTes || null,
+            noTes: updated.userTestSession?.noTes || null,
             username: updated.userTestSession?.user?.username || null,
             nrp: updated.userTestSession?.user?.biodata?.nrp || null,
             kategoriTes:
