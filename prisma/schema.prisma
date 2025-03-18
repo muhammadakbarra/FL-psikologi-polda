@@ -139,7 +139,8 @@ model UserTestSession {
   updatedAt      DateTime  @default(now())
 
   user        User         @relation(fields: [userId], references: [id])
-  kategoriTes KategoriTes  @relation(fields: [kategoriTesId], references: [id])
+  // Tambahkan onDelete: Cascade di sini
+  kategoriTes KategoriTes  @relation(fields: [kategoriTesId], references: [id], onDelete: Cascade)
   userAnswers UserAnswer[]
   HasilTes    HasilTes[]
 }
