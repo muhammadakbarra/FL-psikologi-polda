@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const hasilTesController = require('../controllers/hasilTesController');
 const auth = require('../middleware/auth');
+const excelUpload = require('../config/excelMulterConfig');
 
 // Mengambil semua hasil tes
 router.get('/', auth.verifyToken, hasilTesController.getAllHasilTes);
@@ -17,6 +18,14 @@ router.get(
     '/user/:userId',
     auth.verifyToken,
     hasilTesController.getHasilTesByUserId
+);
+
+// Endpoint baru: Batch update via CSV
+router.post(
+    '/batch-update',
+    auth.verifyToken,
+    excelUpload.single('file'), // mengharapkan field "file" di form-data
+    hasilTesController.batchUpdateHasilTesFromExcel
 );
 
 module.exports = router;

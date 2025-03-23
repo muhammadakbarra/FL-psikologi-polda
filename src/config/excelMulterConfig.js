@@ -18,7 +18,7 @@ function fileFilter(req, file, cb) {
 
     // Periksa extension file
     const ext = path.extname(file.originalname).toLowerCase();
-    const validExt = ['.xlsx', '.xls'].includes(ext);
+    const validExt = ['.xlsx', '.xls', '.csv'].includes(ext);
 
     if (excelMimeTypes.includes(file.mimetype) || validExt) {
         cb(null, true);
