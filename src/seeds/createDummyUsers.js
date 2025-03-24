@@ -20,7 +20,6 @@ const pangkatList = [
     'BRIPTU',
     'BRIPDA',
 ];
-
 const kesatuanList = [
     'POLRESTABES MAKASSAR',
     'POLRES PELABUHAN MAKASSAR',
@@ -47,6 +46,35 @@ const kesatuanList = [
     'POLRES PALOPO',
     'POLRES LUWU UTARA',
     'POLRES LUWU TIMUR',
+    'ITWASDA',
+    'BIRO OPS',
+    'BIRO RENA',
+    'BIRO SDM',
+    'BIRO LOGISTIK',
+    'DITINTELKAM',
+    'DITRESKRIMUM',
+    'DITRESKRIMSUS',
+    'DITRESNARKOBA',
+    'DITSAMAPTA',
+    'DITBINMAS',
+    'DITPAMOBVIT',
+    'DITPOLAIRUD',
+    'DITLANTAS',
+    'SATBRIMOB',
+    'DITTAHTI',
+    'BIDPROPAM',
+    'BIDKUM',
+    'BIDTIK',
+    'BIDHUMAS',
+    'BIDDOKKES',
+    'BIDLABFOR',
+    'BIDKEU',
+    'SPKT',
+    'SETUM',
+    'SPRIPIM',
+    'YANMA',
+    'RUMKIT',
+    'SPN',
 ];
 
 async function seedPangkat() {
