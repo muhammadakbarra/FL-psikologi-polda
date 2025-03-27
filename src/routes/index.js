@@ -15,6 +15,7 @@ const testSessionRoutes = require('./testSessionRoutes');
 const testAnswerRoutes = require('./testAnswerRoutes');
 const hasilRoutes = require('./hasilTesRoutes');
 const hasilTesExport = require('./hasilTesExportRoutes');
+const websiteBackgroundRoutes = require('./websiteBackgroundRoutes');
 
 const router = express.Router();
 
@@ -33,4 +34,5 @@ router.use('/test-session', testSessionRoutes);
 router.use('/test-answer', testAnswerRoutes);
 router.use('/hasil-tes', hasilRoutes);
 router.use('/hasil-tes-export', hasilTesExport);
+router.use('/background', websiteBackgroundRoutes);
 module.exports = router;
