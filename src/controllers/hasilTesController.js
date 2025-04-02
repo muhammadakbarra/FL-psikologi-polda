@@ -237,6 +237,7 @@ const getHasilTesByUserId = async (req, res) => {
         });
     }
 };
+
 // Fungsi untuk batch update hasil tes dari file CSV/Excel berdasarkan username dan nrp
 const batchUpdateHasilTesFromExcel = async (req, res) => {
     try {
@@ -261,69 +262,128 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
             });
         }
 
+        // Validasi format template CSV
+        const requiredColumns = ['username', 'nrp', 'status'];
+        const firstRow = data[0];
+
+        const missingColumns = requiredColumns.filter(
+            (col) => !(col in firstRow)
+        );
+        if (missingColumns.length > 0) {
+            return res.status(400).json({
+                status: 'error',
+                message: `Format CSV tidak valid. Kolom yang wajib ada: ${missingColumns.join(
+                    ', '
+                )}`,
+            });
+        }
+
         // Array untuk menyimpan promise update dan catatan baris yang tidak ditemukan
         const updatePromises = [];
         const notFoundRecords = [];
+        const processedRecords = [];
 
-        // Proses setiap baris, asumsikan CSV memiliki kolom: username, nrp, status, keterangan
-        data.forEach((row) => {
+        // Proses setiap baris
+        data.forEach((row, index) => {
             let { username, nrp, status, keterangan } = row;
-            if (!username || !nrp || !status) return; // Lewati baris jika kolom wajib tidak lengkap
 
-            // Opsi No. 1: Paksa agar nrp dan username menjadi string
-            // (terutama nrp yang kadang terbaca number di Excel)
-            username = String(username);
-            nrp = String(nrp);
+            // Validasi data yang wajib
+            if (!username || !nrp || !status) {
+                processedRecords.push({
+                    row: index + 2, // +2 karena indeks dimulai dari 0 dan header row
+                    username,
+                    nrp,
+                    status: 'Error',
+                    keterangan: 'Data tidak lengkap',
+                });
+                return; // Lewati baris jika kolom wajib tidak lengkap
+            }
+
+            // Paksa agar nrp dan username menjadi string
+            username = String(username).trim();
+            nrp = String(nrp).trim();
+            status = String(status).trim();
 
             updatePromises.push(
                 (async () => {
-                    // Cari record hasil tes berdasarkan username dan nrp
-                    const record = await prisma.hasilTes.findFirst({
-                        where: {
-                            userTestSession: {
-                                user: {
-                                    username: username, // Sudah dipastikan string
-                                    biodata: {
-                                        nrp: nrp, // Sudah dipastikan string
+                    try {
+                        // Cari record hasil tes berdasarkan username dan nrp
+                        const record = await prisma.hasilTes.findFirst({
+                            where: {
+                                userTestSession: {
+                                    user: {
+                                        username: username,
+                                        biodata: {
+                                            nrp: nrp,
+                                        },
                                     },
                                 },
                             },
-                        },
-                        include: {
-                            userTestSession: {
-                                include: {
-                                    user: { include: { biodata: true } },
-                                    kategoriTes: true,
+                            include: {
+                                userTestSession: {
+                                    include: {
+                                        user: { include: { biodata: true } },
+                                        kategoriTes: true,
+                                    },
                                 },
+                                admin: true,
                             },
-                            admin: true,
-                        },
-                    });
+                        });
 
-                    if (!record) {
-                        notFoundRecords.push({ username, nrp });
-                        return null; // Indikasikan tidak ditemukan
+                        if (!record) {
+                            notFoundRecords.push({
+                                row: index + 2,
+                                username,
+                                nrp,
+                            });
+                            processedRecords.push({
+                                row: index + 2,
+                                username,
+                                nrp,
+                                status: 'Error',
+                                keterangan: 'Data tidak ditemukan',
+                            });
+                            return null; // Indikasikan tidak ditemukan
+                        }
+
+                        // Perbarui record yang ditemukan
+                        const updated = await prisma.hasilTes.update({
+                            where: { id: record.id },
+                            data: {
+                                status,
+                                keterangan: keterangan || null,
+                                adminId: req.user.id, // Diupdate berdasarkan admin yang sedang login
+                            },
+                            include: {
+                                userTestSession: {
+                                    include: {
+                                        user: { include: { biodata: true } },
+                                        kategoriTes: true,
+                                    },
+                                },
+                                admin: true,
+                            },
+                        });
+
+                        processedRecords.push({
+                            row: index + 2,
+                            username,
+                            nrp,
+                            status: 'Success',
+                            keterangan: 'Data berhasil diperbarui',
+                        });
+
+                        return updated;
+                    } catch (error) {
+                        processedRecords.push({
+                            row: index + 2,
+                            username,
+                            nrp,
+                            status: 'Error',
+                            keterangan: error.message,
+                        });
+                        return null;
                     }
-
-                    // Perbarui record yang ditemukan
-                    const updated = await prisma.hasilTes.update({
-                        where: { id: record.id },
-                        data: {
-                            status,
-                            keterangan: keterangan || null,
-                            adminId: req.user.id, // Diupdate berdasarkan admin yang sedang login
-                        },
-                        include: {
-                            userTestSession: {
-                                include: {
-                                    user: { include: { biodata: true } },
-                                    kategoriTes: true,
-                                },
-                            },
-                            admin: true,
-                        },
-                    });
-                    return updated;
                 })()
             );
         });
@@ -353,15 +413,28 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
             updatedAt: record.updatedAt,
         }));
 
+        // Buat file laporan hasil pemrosesan
+        const wb = xlsx.utils.book_new();
+        const ws = xlsx.utils.json_to_sheet(processedRecords);
+        xlsx.utils.book_append_sheet(wb, ws, 'Hasil Pemrosesan');
+        const reportBuffer = xlsx.write(wb, {
+            type: 'buffer',
+            bookType: 'xlsx',
+        });
+
         res.status(200).json({
             status: 'success',
             message: `Berhasil memperbarui ${formattedResults.length} record. Tidak ditemukan: ${notFoundRecords.length} record.`,
             data: {
                 updatedRecords: formattedResults,
                 notFound: notFoundRecords,
+                processedRecords: processedRecords,
+                totalProcessed: data.length,
+                reportFile: reportBuffer.toString('base64'),
             },
         });
     } catch (error) {
+        console.error('Error in batch update:', error);
         res.status(500).json({
             status: 'error',
             message:
