@@ -2,8 +2,13 @@ const kategoriTesService = require('../services/kategoriTesService');
 
 const createKategoriTes = async (req, res) => {
     try {
-        const { nama_kategori_tes, masterJenisTesId, waktu_pengerjaan } =
-            req.body;
+        const {
+            nama_kategori_tes,
+            masterJenisTesId,
+            waktu_pengerjaan,
+            instruksi_tes,
+        } = req.body;
+
         if (!nama_kategori_tes || !masterJenisTesId || !waktu_pengerjaan) {
             return res.status(400).json({
                 status: 'error',
@@ -11,11 +16,14 @@ const createKategoriTes = async (req, res) => {
                     'Semua field (nama_kategori_tes, masterJenisTesId, waktu_pengerjaan) harus diisi',
             });
         }
+
         const newKategoriTes = await kategoriTesService.createKategoriTes({
             nama_kategori_tes,
             masterJenisTesId,
             waktu_pengerjaan,
+            instruksi_tes, // Tambahkan field instruksi_tes
         });
+
         res.status(201).json({
             status: 'success',
             message: 'Kategori Tes berhasil dibuat',

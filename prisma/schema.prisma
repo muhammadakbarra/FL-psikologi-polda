@@ -55,12 +55,12 @@ model KategoriTes {
   nama_kategori_tes String
   masterJenisTesId  Int
   waktu_pengerjaan  String
+  instruksi_tes     String?  @db.Text  // Tambahkan field ini dengan tipe Text dan opsional (nullable)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @default(now())
 
   masterJenisTes MasterJenisTes @relation(fields: [masterJenisTesId], references: [id])
 
-  // Relasi balik ke Soal dan UserTestSession
   soal            Soal[]
   UserTestSession UserTestSession[]
 }
