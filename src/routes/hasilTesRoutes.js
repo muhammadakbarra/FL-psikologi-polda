@@ -30,4 +30,11 @@ router.post(
 
 // delete
 router.delete('/:id', auth.verifyToken, hasilTesController.deleteHasilTes);
+
+// template cv
+router.get(
+    '/generate-template',
+    auth.verifyToken,
+    hasilTesController.generateTemplateCSV
+);
 module.exports = router;

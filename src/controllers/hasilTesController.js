@@ -31,6 +31,7 @@ const getAllHasilTes = async (req, res) => {
             finishedAt: item.userTestSession?.finishedAt || null,
             status: item.status,
             keterangan: item.keterangan || null,
+            masa_berlaku: item.masa_berlaku || null, // Tambahkan masa berlaku
             admin: item.admin
                 ? { id: item.admin.id, username: item.admin.username }
                 : null,
@@ -99,6 +100,7 @@ const getHasilTesByFilter = async (req, res) => {
             finishedAt: item.userTestSession?.finishedAt || null,
             status: item.status,
             keterangan: item.keterangan || null,
+            masa_berlaku: item.masa_berlaku || null, // Tambahkan masa berlaku
             admin: item.admin
                 ? { id: item.admin.id, username: item.admin.username }
                 : null,
@@ -129,11 +131,20 @@ const updateHasilTes = async (req, res) => {
         // Asumsi, hanya admin yang dapat mengupdate hasil tes.
         const adminId = req.user.id;
 
+        // Tentukan masa berlaku berdasarkan status
+        let masa_berlaku = '-';
+        if (status === 'MEMENUHI_SYARAT') {
+            masa_berlaku = '1 tahun';
+        } else if (status === 'TIDAK_MEMENUHI_SYARAT') {
+            masa_berlaku = '3 bulan';
+        }
+
         const updated = await prisma.hasilTes.update({
             where: { id: hasilTesId },
             data: {
                 status,
                 keterangan,
+                masa_berlaku, // Set masa berlaku otomatis
                 adminId,
             },
             include: {
@@ -161,6 +172,7 @@ const updateHasilTes = async (req, res) => {
             finishedAt: updated.userTestSession?.finishedAt || null,
             status: updated.status,
             keterangan: updated.keterangan || null,
+            masa_berlaku: updated.masa_berlaku || null, // Tambahkan masa berlaku ke response
             admin: updated.admin
                 ? { id: updated.admin.id, username: updated.admin.username }
                 : null,
@@ -216,6 +228,7 @@ const getHasilTesByUserId = async (req, res) => {
             finishedAt: item.userTestSession?.finishedAt || null,
             status: item.status,
             keterangan: item.keterangan || null,
+            masa_berlaku: item.masa_berlaku || null, // Tambahkan masa berlaku
             admin: item.admin
                 ? { id: item.admin.id, username: item.admin.username }
                 : null,
@@ -245,7 +258,7 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({
                 status: 'error',
-                message: 'File CSV diperlukan untuk update batch.',
+                message: 'File Excel diperlukan untuk update batch.',
             });
         }
 
@@ -258,11 +271,11 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
         if (!data || data.length === 0) {
             return res.status(400).json({
                 status: 'error',
-                message: 'Data pada file CSV kosong.',
+                message: 'Data pada file Excel kosong.',
             });
         }
 
-        // Validasi format template CSV
+        // Validasi format template Excel
         const requiredColumns = ['username', 'nrp', 'status'];
         const firstRow = data[0];
 
@@ -272,7 +285,7 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
         if (missingColumns.length > 0) {
             return res.status(400).json({
                 status: 'error',
-                message: `Format CSV tidak valid. Kolom yang wajib ada: ${missingColumns.join(
+                message: `Format Excel tidak valid. Kolom yang wajib ada: ${missingColumns.join(
                     ', '
                 )}`,
             });
@@ -286,6 +299,8 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
         // Proses setiap baris
         data.forEach((row, index) => {
             let { username, nrp, status, keterangan } = row;
+
+            // Abaikan kolom 'no', 'noTes', dan 'masa_berlaku' karena akan diisi otomatis
 
             // Validasi data yang wajib
             if (!username || !nrp || !status) {
@@ -346,12 +361,21 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
                             return null; // Indikasikan tidak ditemukan
                         }
 
+                        // Tentukan masa berlaku berdasarkan status
+                        let masa_berlaku = '-';
+                        if (status === 'MEMENUHI_SYARAT') {
+                            masa_berlaku = '1 tahun';
+                        } else if (status === 'TIDAK_MEMENUHI_SYARAT') {
+                            masa_berlaku = '3 bulan';
+                        }
+
                         // Perbarui record yang ditemukan
                         const updated = await prisma.hasilTes.update({
                             where: { id: record.id },
                             data: {
                                 status,
                                 keterangan: keterangan || null,
+                                masa_berlaku, // Set masa berlaku otomatis
                                 adminId: req.user.id, // Diupdate berdasarkan admin yang sedang login
                             },
                             include: {
@@ -371,6 +395,7 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
                             nrp,
                             status: 'Success',
                             keterangan: 'Data berhasil diperbarui',
+                            masa_berlaku, // Tambahkan informasi masa berlaku yang diupdate
                         });
 
                         return updated;
@@ -406,6 +431,7 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
             finishedAt: record.userTestSession?.finishedAt || null,
             status: record.status,
             keterangan: record.keterangan || null,
+            masa_berlaku: record.masa_berlaku || null, // Tambahkan masa berlaku ke response
             admin: record.admin
                 ? { id: record.admin.id, username: record.admin.username }
                 : null,
@@ -504,6 +530,91 @@ const deleteHasilTes = async (req, res) => {
         });
     }
 };
+
+const generateTemplateCSV = async (req, res) => {
+    try {
+        const { kategoriTesId, kesatuanId } = req.query;
+        let whereClause = {};
+
+        if (kategoriTesId) {
+            whereClause.userTestSession = {
+                ...(whereClause.userTestSession || {}),
+                kategoriTesId: parseInt(kategoriTesId),
+            };
+        }
+
+        if (kesatuanId) {
+            whereClause.userTestSession = {
+                ...(whereClause.userTestSession || {}),
+                user: { masterKesatuanId: parseInt(kesatuanId) },
+            };
+        }
+
+        const hasilTesList = await prisma.hasilTes.findMany({
+            where: whereClause,
+            include: {
+                userTestSession: {
+                    include: {
+                        user: {
+                            include: { biodata: true },
+                        },
+                        kategoriTes: true,
+                    },
+                },
+                admin: true,
+            },
+        });
+
+        // Mengubah format data untuk CSV
+        const templateData = hasilTesList.map((item, index) => {
+            // Tentukan masa berlaku berdasarkan status
+            let masa_berlaku = '-';
+            if (item.status === 'MEMENUHI_SYARAT') {
+                masa_berlaku = '1 tahun';
+            } else if (item.status === 'TIDAK_MEMENUHI_SYARAT') {
+                masa_berlaku = '3 bulan';
+            }
+
+            return {
+                no: index + 1,
+                username: item.userTestSession?.user?.username || '',
+                nrp: item.userTestSession?.user?.biodata?.nrp || '',
+                noTes: item.userTestSession?.noTes || '',
+                masa_berlaku: masa_berlaku,
+                status: item.status,
+                keterangan: item.keterangan || '',
+            };
+        });
+
+        // Buat file Excel
+        const wb = xlsx.utils.book_new();
+        const ws = xlsx.utils.json_to_sheet(templateData);
+        xlsx.utils.book_append_sheet(wb, ws, 'Template Update Status');
+
+        // Convert Excel file ke buffer
+        const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+        // Set header untuk download file
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        res.setHeader(
+            'Content-Disposition',
+            'attachment; filename=template_update_hasil_tes.xlsx'
+        );
+
+        // Kirim file
+        res.status(200).send(buffer);
+    } catch (error) {
+        console.error('Error generating template CSV:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Gagal generate template CSV',
+        });
+    }
+};
+
 module.exports = {
     getAllHasilTes,
     getHasilTesByFilter,
@@ -511,4 +622,5 @@ module.exports = {
     getHasilTesByUserId,
     batchUpdateHasilTesFromExcel,
     deleteHasilTes,
+    generateTemplateCSV,
 };

@@ -171,6 +171,7 @@ model HasilTes {
   userTestSessionId Int
   status            HasilTesStatus @default(MENUNGGU)
   keterangan        String?
+  masa_berlaku      String?
   adminId           Int?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @default(now())
