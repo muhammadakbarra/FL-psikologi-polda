@@ -443,10 +443,72 @@ const batchUpdateHasilTesFromExcel = async (req, res) => {
         });
     }
 };
+
+const deleteHasilTes = async (req, res) => {
+    try {
+        const hasilTesId = parseInt(req.params.id);
+
+        // Cari hasil tes terlebih dahulu untuk mendapatkan userTestSessionId
+        const hasilTes = await prisma.hasilTes.findUnique({
+            where: { id: hasilTesId },
+            include: {
+                userTestSession: true,
+            },
+        });
+
+        if (!hasilTes) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Hasil tes tidak ditemukan',
+            });
+        }
+
+        // Catat userTestSessionId untuk operasi delete berikutnya
+        const userTestSessionId = hasilTes.userTestSessionId;
+
+        // Mulai transaction agar semua operasi berhasil atau gagal bersama
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Hapus hasil tes terlebih dahulu
+            const deletedHasilTes = await tx.hasilTes.delete({
+                where: { id: hasilTesId },
+            });
+
+            // 2. Hapus semua user answers terkait dengan userTestSession
+            const deletedUserAnswers = await tx.userAnswer.deleteMany({
+                where: { userTestSessionId },
+            });
+
+            // 3. Hapus user test session
+            const deletedUserTestSession = await tx.userTestSession.delete({
+                where: { id: userTestSessionId },
+            });
+
+            // Mengembalikan data yang dihapus untuk konfirmasi
+            return {
+                hasilTesId: deletedHasilTes.id,
+                userTestSessionId: deletedUserTestSession.id,
+                userAnswersDeleted: deletedUserAnswers.count,
+            };
+        });
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Berhasil menghapus data hasil tes dan data terkait',
+            data: result,
+        });
+    } catch (error) {
+        console.error('Error deleting hasil tes:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Gagal menghapus data hasil tes',
+        });
+    }
+};
 module.exports = {
     getAllHasilTes,
     getHasilTesByFilter,
     updateHasilTes,
     getHasilTesByUserId,
     batchUpdateHasilTesFromExcel,
+    deleteHasilTes,
 };

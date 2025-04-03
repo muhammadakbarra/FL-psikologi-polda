@@ -28,4 +28,6 @@ router.post(
     hasilTesController.batchUpdateHasilTesFromExcel
 );
 
+// delete
+router.delete('/:id', auth.verifyToken, hasilTesController.deleteHasilTes);
 module.exports = router;
