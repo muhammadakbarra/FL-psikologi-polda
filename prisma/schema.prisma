@@ -67,6 +67,7 @@ model KategoriTes {
   nama_kategori_tes String
   masterJenisTesId  Int
   waktu_pengerjaan  String
+  instruksi_tes     String?  @db.Text
   createdAt         DateTime @default(now())
   updatedAt         DateTime @default(now())
 
