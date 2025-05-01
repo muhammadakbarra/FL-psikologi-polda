@@ -8,7 +8,11 @@
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio",
-        "seed": "node src/seeds/createDummyUsers.js"
+        "seed": "node src/seeds/createDummyUsers.js",
+        "add-admin": "node src/seeds/add-admin.js",
+        "delete-admin": "node src/seeds/delete-admin.js",
+        "list-admins": "node src/seeds/list-admins.js",
+        "change-superadmin-password": "node src/seeds/change-superadmin-password.js"
     },
     "keywords": [],
     "author": "",
