@@ -55,6 +55,7 @@ const exportTestResults = async (req, res) => {
             },
             { label: 'Username', value: session.user.username },
             { label: 'NRP', value: session.user.biodata?.nrp || '' },
+            { label: 'Jabatan', value: session.user.biodata?.jabatan || '' }, // Tambahkan field baru
             {
                 label: 'Kesatuan',
                 value: session.user.masterKesatuan?.nama_kesatuan || '',
@@ -174,14 +175,20 @@ const exportConsolidatedResults = async (req, res) => {
 
         const userSessions = Object.values(grouped);
 
-        // Fixed fields untuk tiap user
         const fixedFields = [
             { label: 'Username', getter: (s) => s.user.username },
             {
                 label: 'Nama Lengkap',
                 getter: (s) => s.user.biodata?.nama_lengkap || '',
             },
-            { label: 'NRP', getter: (s) => s.user.biodata?.nrp || '' },
+            {
+                label: 'NRP',
+                getter: (s) => s.user.biodata?.nrp || '',
+            },
+            {
+                label: 'Jabatan',
+                getter: (s) => s.user.biodata?.jabatan || '',
+            },
             {
                 label: 'Kategori Tes',
                 getter: (s) => s.kategoriTes?.nama_kategori_tes || '',
