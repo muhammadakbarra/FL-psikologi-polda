@@ -22,12 +22,19 @@ const exportTestResults = async (req, res) => {
                 finishedAt: { not: null },
             },
             include: {
-                user: { include: { biodata: true, masterKesatuan: true } },
+                user: {
+                    include: {
+                        biodata: {
+                            include: { masterPangkat: true },
+                        },
+                        masterKesatuan: true,
+                    },
+                },
                 kategoriTes: true,
                 userAnswers: {
                     include: {
                         soal: { include: { pilihanJawaban: true } },
-                        pilihanJawaban: true, // sertakan jawaban yang dipilih user
+                        pilihanJawaban: true,
                     },
                 },
             },
@@ -54,8 +61,16 @@ const exportTestResults = async (req, res) => {
                 value: session.kategoriTes?.nama_kategori_tes || '',
             },
             { label: 'Username', value: session.user.username },
+            {
+                label: 'Nama Lengkap',
+                value: session.user.biodata?.nama_lengkap || '',
+            },
+            {
+                label: 'Pangkat',
+                value: session.user.biodata?.masterPangkat?.nama_pangkat || '',
+            },
             { label: 'NRP', value: session.user.biodata?.nrp || '' },
-            { label: 'Jabatan', value: session.user.biodata?.jabatan || '' }, // Tambahkan field baru
+            { label: 'Jabatan', value: session.user.biodata?.jabatan || '' },
             {
                 label: 'Kesatuan',
                 value: session.user.masterKesatuan?.nama_kesatuan || '',
@@ -143,12 +158,19 @@ const exportConsolidatedResults = async (req, res) => {
                 user: { masterKesatuanId: parseInt(kesatuanId) },
             },
             include: {
-                user: { include: { biodata: true, masterKesatuan: true } },
+                user: {
+                    include: {
+                        biodata: {
+                            include: { masterPangkat: true },
+                        },
+                        masterKesatuan: true,
+                    },
+                },
                 kategoriTes: true,
                 userAnswers: {
                     include: {
                         soal: { include: { pilihanJawaban: true } },
-                        pilihanJawaban: true, // sertakan jawaban yang dipilih user
+                        pilihanJawaban: true,
                     },
                 },
             },
@@ -182,6 +204,11 @@ const exportConsolidatedResults = async (req, res) => {
                 getter: (s) => s.user.biodata?.nama_lengkap || '',
             },
             {
+                label: 'Pangkat',
+                getter: (s) =>
+                    s.user.biodata?.masterPangkat?.nama_pangkat || '',
+            },
+            {
                 label: 'NRP',
                 getter: (s) => s.user.biodata?.nrp || '',
             },
@@ -190,12 +217,12 @@ const exportConsolidatedResults = async (req, res) => {
                 getter: (s) => s.user.biodata?.jabatan || '',
             },
             {
-                label: 'Kategori Tes',
-                getter: (s) => s.kategoriTes?.nama_kategori_tes || '',
-            },
-            {
                 label: 'Kesatuan',
                 getter: (s) => s.user.masterKesatuan?.nama_kesatuan || '',
+            },
+            {
+                label: 'Kategori Tes',
+                getter: (s) => s.kategoriTes?.nama_kategori_tes || '',
             },
             { label: 'Started At', getter: (s) => s.startedAt },
             { label: 'Finished At', getter: (s) => s.finishedAt },
