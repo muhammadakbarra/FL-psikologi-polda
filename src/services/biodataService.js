@@ -8,6 +8,7 @@ async function createBiodata(data) {
             nama_lengkap: data.nama_lengkap,
             nrp: data.nrp,
             jabatan: data.jabatan,
+            alamat: data.alamat, // Tambahkan alamat
             masterPangkatId: data.masterPangkatId,
         },
     });

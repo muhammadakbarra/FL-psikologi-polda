@@ -1,8 +1,7 @@
 const biodataService = require('../services/biodataService');
-
 const createBiodata = async (req, res) => {
     try {
-        const { userId, nama_lengkap, nrp, jabatan, masterPangkatId } =
+        const { userId, nama_lengkap, nrp, jabatan, alamat, masterPangkatId } =
             req.body;
 
         // Validasi sederhana
@@ -20,6 +19,7 @@ const createBiodata = async (req, res) => {
             nama_lengkap,
             nrp,
             jabatan,
+            alamat, // Tambahkan alamat
             masterPangkatId: parseInt(masterPangkatId),
         });
 
