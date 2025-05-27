@@ -11,6 +11,7 @@ async function getAllUserBiodata(req, res) {
             nama_lengkap: u.biodata?.nama_lengkap || null,
             nrp: u.biodata?.nrp || null,
             jabatan: u.biodata?.jabatan || null,
+            alamat: u.biodata?.alamat || null,
             pangkat: u.biodata?.masterPangkat?.nama_pangkat || null,
             kesatuan: u.masterKesatuan?.nama_kesatuan || null, // diambil dari user (bukan biodata)
         }));
@@ -42,6 +43,7 @@ async function getUserBiodataById(req, res) {
             nama_lengkap: user.biodata?.nama_lengkap || null,
             nrp: user.biodata?.nrp || null,
             jabatan: user.biodata?.jabatan || null,
+            alamat: user.biodata?.alamat || null,
             pangkat: user.biodata?.masterPangkat?.nama_pangkat || null,
             kesatuan: user.masterKesatuan?.nama_kesatuan || null, // diambil dari user
         };
@@ -67,6 +69,7 @@ async function updateUserBiodata(req, res) {
             nama_lengkap,
             nrp,
             jabatan,
+            alamat,
             masterPangkatId,
             // masterKesatuanId dihapus karena sekarang info kesatuan ada di tabel User
         } = req.body;
@@ -79,6 +82,7 @@ async function updateUserBiodata(req, res) {
                 nama_lengkap,
                 nrp,
                 jabatan,
+                alamat,
                 masterPangkatId: masterPangkatId
                     ? parseInt(masterPangkatId)
                     : undefined,
@@ -91,6 +95,7 @@ async function updateUserBiodata(req, res) {
             nama_lengkap: updatedUser.biodata?.nama_lengkap || null,
             nrp: updatedUser.biodata?.nrp || null,
             jabatan: updatedUser.biodata?.jabatan || null,
+            alamat: updatedUser.biodata?.alamat || null,
             pangkat: updatedUser.biodata?.masterPangkat?.nama_pangkat || null,
             kesatuan: updatedUser.masterKesatuan?.nama_kesatuan || null, // diambil dari user
         };
